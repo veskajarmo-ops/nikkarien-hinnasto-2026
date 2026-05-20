@@ -1,0 +1,40 @@
+{
+  "name": "Nikkarien Oy — Hinnasto 2026",
+  "short_name": "Nikkarien Hinnasto",
+  "description": "Nikkarien Oy:n hinnasto 2026, suomi ja englanti. Toimii offline-tilassa.",
+  "lang": "fi",
+  "dir": "ltr",
+  "start_url": "./Hinnasto_2026_FI_EN_ver3.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf9f7",
+  "theme_color": "#7B3D1E",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

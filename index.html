@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nikkarien Hinnasto 2026</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7B3D1E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nikkarien">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta http-equiv="refresh" content="0; url=Hinnasto_2026_FI_EN_ver3.html">
+<style>
+body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:#faf9f7;color:#1a1410;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px;}
+.box{max-width:380px;}
+.logo{font-size:22px;font-weight:800;color:#7B3D1E;margin-bottom:18px;}
+.spinner{display:inline-block;width:36px;height:36px;border:3px solid #e5e0da;border-top-color:#7B3D1E;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+a{color:#7B3D1E;}
+</style>
+<script>
+// Varmistus jos meta refresh ei toimi: tee redirect myös JS:llä
+window.location.replace('Hinnasto_2026_FI_EN_ver3.html');
+
+// Rekisteröi service worker — sama tehtävä kuin pääsivulla, jotta välimuisti
+// täyttyy myös silloin kun käyttäjä avaa ensimmäistä kertaa juuriosoitteen
+if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('service-worker.js').catch(function(e){
+      console.warn('SW-rekisteröinti epäonnistui:', e);
+    });
+  });
+}
+</script>
+</head>
+<body>
+<div class="box">
+<div class="logo">NIKKARIEN OY</div>
+<div class="spinner"></div>
+<p>Avataan hinnastoa…</p>
+<p style="margin-top:18px;font-size:13px;color:#8a7f78;">Jos hinnasto ei avaudu automaattisesti,<br><a href="Hinnasto_2026_FI_EN_ver3.html">klikkaa tästä</a>.</p>
+</div>
+</body>
+</html>
