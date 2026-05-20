@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hinnasto 2026 – Nikkarien Oy v0.3</title>
+
+<!-- ===== PWA ===== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7B3D1E">
+<meta name="application-name" content="Nikkarien Hinnasto">
+<meta name="description" content="Nikkarien Oy:n hinnasto 2026 — toimii offline-tilassa.">
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nikkarien">
+<link rel="apple-touch-icon" href="icon-192.png">
+<!-- Ikonit -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<script>
+// Automaattinen versiointi: pohja v0.2 = 2026-04-10, kasvaa +0.1 per päivä
+(function(){
+  var BASE_DATE = new Date('2026-04-10');
+  BASE_DATE.setHours(0,0,0,0);
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var daysDiff = Math.max(0, Math.floor((today - BASE_DATE) / 86400000));
+  var tenths = 2 + daysDiff; // v0.2 = 2 kymmenystä
+  window.AUTO_VERSION = 'v' + (tenths / 10).toFixed(1);
+  window.AUTO_DATE = today.toLocaleDateString('fi-FI', {day:'numeric', month:'numeric', year:'numeric'});
+})();
+</script>
+<style>
+/* ===== BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf9f7;--surface:#fff;--card:#fff;--border:#e5e0da;
+  --accent:#7B3D1E;--text:#1a1410;--muted:#8a7f78;
+  --erikois:#b45309;--erikois-bg:#fffbeb;--erikois-border:#fde68a;
+  --shadow:0 1px 6px rgba(0,0,0,0.07),0 2px 12px rgba(0,0,0,0.04);
+  --cart-bar:56px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:calc(var(--cart-bar)+20px);}
+
+/* ===== HEADER ===== */
+header{background:var(--surface);border-bottom:2px solid var(--accent);padding:12px 14px 10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(123,61,30,0.10);}
+.header-top{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;}
+.logo{font-size:17px;font-weight:800;color:var(--accent);}
+.sub{font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-left:auto;}
+.search-wrap{position:relative;margin-bottom:8px;}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+#searchInput{width:100%;padding:10px 40px 10px 36px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;outline:none;transition:border-color .2s;}
+#searchInput:focus{border-color:var(--accent);}
+#searchInput::placeholder{color:var(--muted);}
+.clear-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;display:none;line-height:1;}
+.clear-btn.show{display:block;}
+.chips{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);transition:all .15s;white-space:nowrap;}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chip.erikois-chip{border-color:var(--erikois);color:var(--erikois);background:var(--erikois-bg);border-width:2px;font-weight:800;letter-spacing:.3px;box-shadow:0 1px 4px rgba(180,83,9,0.18);}
+.chip.erikois-chip.active{background:var(--erikois);border-color:var(--erikois);color:#fff;box-shadow:0 2px 8px rgba(180,83,9,0.35);}
+
+
+/* ===== LANGUAGE ===== */
+.lang-bar{background:#fff;border-bottom:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:8px 14px;gap:8px;}
+.lang-bar-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;}
+.lang-bar-right{display:flex;align-items:center;gap:8px;}
+.lang-btn{background:#f0ece8;border:2px solid #c9bfb6;color:#5a4a42;border-radius:8px;padding:7px 16px;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;min-width:72px;justify-content:center;}
+.lang-btn.active{background:var(--brown);border-color:var(--brown);color:#fff;box-shadow:0 2px 8px rgba(123,61,30,0.35);}
+.lang-btn:not(.active):hover{background:#e0d8d0;color:var(--text);}
+.help-overlay{display:none;position:fixed;inset:0;background:rgba(15,8,4,0.75);z-index:400;align-items:flex-start;justify-content:center;padding:16px 0 0;}
+.help-overlay.open{display:flex;}
+.help-modal{background:#faf9f7;width:100%;max-width:680px;height:calc(100dvh - 16px);border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden;}
+.help-header{background:var(--brown);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.help-title{font-size:16px;font-weight:800;flex:1;}
+.help-close{background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.help-body{flex:1;overflow-y:auto;padding:0;}
+.help-hero{background:var(--brown);color:#fff;padding:28px 20px 24px;text-align:center;}
+.help-hero-icon{font-size:36px;margin-bottom:10px;}
+.help-hero-title{font-size:20px;font-weight:800;margin-bottom:6px;}
+.help-hero-sub{font-size:13px;opacity:.8;}
+.help-section{padding:16px 18px 4px;}
+.help-sec-title{font-size:13px;font-weight:800;color:var(--brown);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid var(--border);}
+.help-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.help-step-num{width:26px;height:26px;border-radius:50%;background:#f5ede6;color:var(--brown);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.help-step-title{font-size:13px;font-weight:700;margin-bottom:2px;}
+.help-step-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+.help-tip{background:#fffbeb;border-left:3px solid #b45309;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#78350f;line-height:1.5;}
+.help-tip strong{display:block;margin-bottom:2px;}
+.help-tags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px;}
+.help-footer{text-align:center;padding:16px 20px 28px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);}
+.help-open-btn{background:var(--brown);border:none;color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.help-open-btn:hover{background:#9a4d25;}
+
+/* ===== STATS ===== */
+.stats{font-size:11px;color:var(--muted);padding:7px 14px 2px;}
+
+/* ===== GRID ===== */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:9px 9px 12px;}
+@media(min-width:520px){.grid{grid-template-columns:repeat(3,1fr);}}
+@media(min-width:760px){.grid{grid-template-columns:repeat(4,1fr);}}
+@media(min-width:1040px){.grid{grid-template-columns:repeat(5,1fr);}}
+
+/* ===== CARD ===== */
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .12s,border-color .15s;position:relative;}
+.card:active{transform:scale(0.97);}
+.card.in-cart{border-color:var(--accent);box-shadow:0 0 0 2px rgba(123,61,30,0.20);}
+.card.erikois-card{border-color:var(--erikois-border);background:var(--erikois-bg);}
+.card.erikois-card.in-cart{border-color:var(--erikois);box-shadow:0 0 0 2px rgba(180,83,9,0.25);}
+.card-img{width:100%;aspect-ratio:1;object-fit:contain;background:#f6f1eb;padding:8px;}
+.erikois-card .card-img{background:#fef9ee;}
+.card-no-img{width:100%;aspect-ratio:1;background:#f0ece5;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:28px;}
+.card-body{padding:7px 9px 9px;flex:1;display:flex;flex-direction:column;gap:2px;}
+.card-nro{font-size:9.5px;font-weight:700;letter-spacing:1px;color:var(--accent);text-transform:uppercase;}
+.erikois-card .card-nro{color:var(--erikois);}
+.card-name{font-size:11px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1;}
+.card-tag{display:inline-block;font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px;margin-top:3px;width:fit-content;}
+.card-footer{padding-top:5px;display:flex;align-items:flex-end;justify-content:space-between;}
+.price{font-size:14px;font-weight:800;color:var(--accent);}
+.erikois-card .price{color:var(--erikois);}
+.price-norm{font-size:10px;color:var(--muted);text-decoration:line-through;}
+.moq{font-size:9.5px;color:var(--muted);}
+.saldo-badge{font-size:9px;color:#16a34a;font-weight:600;}
+.add-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background .15s;white-space:nowrap;}
+.erikois-card .add-btn{background:var(--erikois);}
+.add-btn:active{opacity:.8;}
+.in-cart-badge{position:absolute;top:7px;right:7px;background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+.erikois-card .in-cart-badge{background:var(--erikois);}
+.erikois-ribbon{position:absolute;top:8px;left:0;background:var(--erikois);color:#fff;font-size:8px;font-weight:800;padding:2px 8px 2px 6px;border-radius:0 4px 4px 0;letter-spacing:.5px;}
+.savings-pct{display:inline-block;background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;}
+
+/* Tag colors */
+.tag-kauha{background:#fef3e8;color:#c25c10;}
+.tag-kiulu{background:#e8f0fe;color:#1a56a8;}
+.tag-setti{background:#f0fdf4;color:#16a34a;}
+.tag-mittari{background:#fdf4ff;color:#9333ea;}
+.tag-tuoksu{background:#fff7ed;color:#d97706;}
+.tag-muu{background:#f1f5f9;color:#475569;}
+.tag-tekstiili{background:#fef2f2;color:#dc2626;}
+.tag-harja{background:#f0fdf4;color:#15803d;}
+.tag-takka{background:#1c1917;color:#d4a26a;}
+.tag-erikoiserä{background:#fef3c7;color:#92400e;}
+
+/* ===== CART BAR ===== */
+.cart-bar{position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--accent);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;box-shadow:0 -3px 16px rgba(123,61,30,0.25);min-height:var(--cart-bar);}
+.cart-bar.hidden{display:none;}
+.cart-bar-icon{font-size:22px;flex-shrink:0;}
+.cart-bar-txt{flex:1;}
+.cart-bar-label{font-size:13px;font-weight:700;}
+.cart-bar-sub{font-size:11px;opacity:.85;}
+.cart-bar-arrow{font-size:18px;opacity:.9;}
+
+/* ===== PRODUCT MODAL ===== */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,8,4,0.72);z-index:200;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:22px 22px 0 0;border-top:3px solid var(--accent);width:100%;max-width:520px;max-height:94vh;overflow-y:auto;animation:slideUp .2s ease;}
+.modal.erikois-modal{border-top-color:var(--erikois);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-img-wrap{background:#f6f1eb;display:flex;align-items:center;justify-content:center;padding:18px;margin-top:8px;}
+.modal-img{max-width:100%;max-height:220px;object-fit:contain;}
+.modal-body{padding:14px 18px 36px;}
+.modal-nro{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:3px;}
+.modal-name{font-size:15px;font-weight:700;line-height:1.3;margin-bottom:14px;}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.dlbl{font-size:12px;color:var(--muted);}
+.dval{font-size:13px;font-weight:700;}
+.dval.accent{color:var(--accent);font-size:21px;}
+.dval.erikois-accent{color:var(--erikois);font-size:21px;}
+.modal-add-section{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+.qty-row{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:10px 14px;}
+.qty-label{font-size:13px;color:var(--muted);flex:1;}
+.qty-ctrl{display:flex;align-items:center;}
+.qty-btn{background:var(--accent);color:#fff;border:none;width:34px;height:34px;font-size:18px;font-weight:700;cursor:pointer;transition:opacity .12s;}
+.qty-btn:first-child{border-radius:8px 0 0 8px;}
+.qty-btn:last-child{border-radius:0 8px 8px 0;}
+.qty-btn:active{opacity:.7;}
+.qty-val{background:#fff;border:1.5px solid var(--border);border-left:none;border-right:none;width:48px;height:34px;text-align:center;font-size:15px;font-weight:700;color:var(--text);}
+.modal-add-btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;transition:background .15s;}
+.modal-add-btn.erikois{background:var(--erikois);}
+.modal-add-btn.remove{background:#dc2626;}
+.modal-add-btn:active{opacity:.8;}
+.close-btn{position:absolute;top:12px;right:14px;background:var(--bg);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.mhead{position:relative;}
+.no-results{text-align:center;padding:60px 20px;color:var(--muted);grid-column:1/-1;font-size:14px;}
+
+/* ===== CART MODAL ===== */
+.cart-overlay{display:none;position:fixed;inset:0;background:rgba(15,8,4,0.72);z-index:300;align-items:flex-start;justify-content:center;}
+.cart-overlay.open{display:flex;}
+.cart-modal{background:var(--surface);width:100%;max-width:600px;height:100dvh;display:flex;flex-direction:column;animation:slideLeft .2s ease;}
+@keyframes slideLeft{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.cart-header{background:var(--accent);color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.cart-title{font-size:17px;font-weight:800;flex:1;}
+.cart-close{background:rgba(255,255,255,0.2);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cart-list{flex:1;overflow-y:auto;padding:6px 14px;}
+.cart-section-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:10px 0 4px;border-top:1px solid var(--border);margin-top:6px;}
+.cart-section-title:first-child{border-top:none;margin-top:0;}
+.cart-empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.cart-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.cart-item-img{width:50px;height:50px;object-fit:contain;background:#f6f1eb;border-radius:8px;padding:3px;flex-shrink:0;}
+.cart-item-erikois{background:#fef9ee;}
+.cart-item-no-img{width:50px;height:50px;background:#f0ece5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.cart-item-info{flex:1;min-width:0;}
+.cart-item-nro{font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;}
+.cart-item-nro.erikois{color:var(--erikois);}
+.cart-item-name{font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cart-item-meta{font-size:10px;color:var(--muted);}
+.cart-item-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.cart-item-price{font-size:13px;font-weight:800;color:var(--accent);}
+.cart-item-ctrl{display:flex;align-items:center;}
+.cart-item-btn{background:var(--accent);color:#fff;border:none;width:28px;height:28px;font-size:15px;font-weight:700;cursor:pointer;}
+.cart-item-btn:first-child{border-radius:6px 0 0 6px;}
+.cart-item-btn:last-child{border-radius:0 6px 6px 0;}
+.cart-item-btn:active{opacity:.7;}
+.cart-item-qty{background:#fff;border:1.5px solid var(--border);border-left:none;border-right:none;width:36px;height:28px;text-align:center;font-size:13px;font-weight:700;}
+.cart-item-del{background:none;border:none;color:#dc2626;font-size:18px;cursor:pointer;padding:0 4px;}
+.cart-footer{background:var(--surface);border-top:2px solid var(--border);padding:12px 18px;flex-shrink:0;box-shadow:0 -2px 12px rgba(0,0,0,0.06);}
+.cart-totals{margin-bottom:12px;}
+.total-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;}
+.total-row.section{font-size:11px;color:var(--muted);padding-top:6px;}
+.total-row.big{font-size:16px;font-weight:800;color:var(--accent);border-top:1.5px solid var(--border);margin-top:4px;padding-top:8px;}
+.print-btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;}
+.print-btn:active{opacity:.8;}
+
+.customer-field{margin-bottom:10px;padding:10px 12px;background:var(--bg);border-radius:10px;border:1.5px solid var(--border);}
+.customer-label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;}
+.customer-input{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--text);outline:none;transition:border-color .2s;}
+.customer-input:focus{border-color:var(--accent);}
+.customer-input::placeholder{color:#bbb;}
+
+/* ===== PRINT ===== */
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{background:#fff;padding:0;}
+  header,#statsBar,.cart-bar,.overlay,.cart-overlay,.grid{display:none!important;}
+  .print-doc{display:block!important;}
+}
+.print-doc{display:none;padding:16mm 15mm;}
+.pd-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7mm;padding-bottom:4mm;border-bottom:2pt solid #7B3D1E;}
+.pd-logo{font-size:20pt;font-weight:800;color:#7B3D1E;}
+.pd-company-info{font-size:7.5pt;color:#666;line-height:1.6;}
+.pd-meta{text-align:right;font-size:8pt;color:#555;line-height:1.7;}
+.pd-title{font-size:17pt;font-weight:800;color:#1a1410;margin-bottom:1mm;}
+.pd-subtitle{font-size:8.5pt;color:#666;margin-bottom:5mm;}
+.pd-section{font-size:8pt;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#7B3D1E;margin:5mm 0 2mm;border-bottom:.5pt solid #e5e0da;padding-bottom:1.5mm;}
+.pd-section.erikois{color:#b45309;}
+.pd-table{width:100%;border-collapse:collapse;}
+.pd-table thead tr{background:#7B3D1E;color:#fff;}
+.pd-table.erikois-table thead tr{background:#b45309;}
+.pd-table th{padding:3.5pt 5pt;font-size:7.5pt;font-weight:700;text-align:left;}
+.pd-table th.right{text-align:right;}
+.pd-table tbody tr{border-bottom:.4pt solid #e5e0da;}
+.pd-table tbody tr:nth-child(even){background:#faf9f7;}
+.pd-table.erikois-table tbody tr:nth-child(even){background:#fffdf5;}
+.pd-table td{padding:3pt 5pt;font-size:7.5pt;vertical-align:middle;}
+.pd-table td.right{text-align:right;font-weight:700;}
+.pd-img{width:34pt;height:34pt;object-fit:contain;border-radius:3pt;}
+.pd-img-cell{width:40pt;text-align:center;}
+.pd-nro{font-size:6.5pt;color:#7B3D1E;font-weight:700;text-transform:uppercase;}
+.erikois-table .pd-nro{color:#b45309;}
+.pd-name{font-size:7.5pt;line-height:1.3;}
+.pd-totals-wrap{margin-top:6mm;display:flex;justify-content:flex-end;}
+.pd-totals{width:230pt;border-collapse:collapse;}
+.pd-totals td{padding:2.5pt 7pt;font-size:8.5pt;}
+.pd-totals .section-sub{font-size:7.5pt;color:#888;padding-top:4pt;}
+.pd-totals .grand-line td{border-top:1.5pt solid #7B3D1E;font-weight:800;color:#7B3D1E;font-size:12pt;padding-top:5pt;}
+.pd-footer{margin-top:8mm;font-size:7pt;color:#aaa;text-align:center;border-top:.4pt solid #e5e0da;padding-top:3mm;}
+</style>
+</head>
+<body>
+
+<!-- ONEDRIVE / MOBILE NOTICE -->
+<div id="odNotice" style="display:none;background:#1e40af;color:#fff;padding:10px 14px;font-size:13px;line-height:1.5;text-align:center;position:sticky;top:0;z-index:500;">
+  <strong>📱</strong> <span id="odText">Avaa tiedosto suoraan selaimessa parhaan käyttökokemuksen saamiseksi — älä käytä OneDriven esikatselua.</span>
+  <button onclick="document.getElementById('odNotice').style.display='none'" style="background:rgba(255,255,255,0.25);border:none;color:#fff;border-radius:6px;padding:3px 10px;margin-left:10px;cursor:pointer;font-size:12px;font-weight:700;">✕</button>
+</div>
+<script>
+(function(){
+  // Show notice if opened inside an iframe (OneDrive preview) or if accessed via https (OneDrive online)
+  const inIframe = window !== window.top;
+  const isOneDrive = location.hostname.includes('sharepoint') || location.hostname.includes('onedrive') || location.hostname.includes('live.com');
+  if(inIframe || isOneDrive) {
+    const n = document.getElementById('odNotice');
+    if(n) n.style.display = 'block';
+  }
+})();
+</script>
+
+<!-- HEADER -->
+<div class="lang-bar" id="langBar">
+  <button class="help-open-btn" onclick="openHelp()">❓ <span data-fi="Ohjeet" data-en="Help">Ohjeet</span></button>
+  <div class="lang-bar-right">
+    <span class="lang-bar-label" data-fi="Kieli:" data-en="Language:">Kieli:</span>
+    <button class="lang-btn active" id="btnFI" onclick="setLang('fi')">🇫🇮 Suomi</button>
+    <button class="lang-btn" id="btnEN" onclick="setLang('en')">🇬🇧 English</button>
+  </div>
+</div>
+<header>
+  <div class="header-top">
+    <div class="logo">Nikkarien Oy <span id="versionSpan" style="font-size:10px;font-weight:600;color:var(--muted);background:#f0ece8;border:1px solid var(--border);border-radius:4px;padding:1px 6px;vertical-align:middle;letter-spacing:.3px;">v0.2</span><span id="dateSpan" style="font-size:10px;color:var(--muted);vertical-align:middle;margin-left:5px;"></span></div>
+    <div class="sub" id="headerSub">Hinnasto 2026 · ALV 0%</div>
+  </div>
+  <div class="search-wrap">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="search" id="searchInput" placeholder="Hae nimellä tai tuotekoodilla…" id="searchInputEl" data-fi="Hae nimellä tai tuotekoodilla…" data-en="Search by name or product code…" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="clear-btn" id="clearBtn" onclick="clearSearch()">&#x2715;</button>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<div class="stats" id="statsBar"></div>
+<div class="grid" id="grid"></div>
+
+<!-- CART BAR -->
+<div class="cart-bar hidden" id="cartBar" onclick="openCart()">
+  <span class="cart-bar-icon">🛒</span>
+  <div class="cart-bar-txt">
+    <div class="cart-bar-label" id="cartBarLabel">Ostoskori</div>
+    <div class="cart-bar-sub" id="cartBarSub"></div>
+  </div>
+  <span class="cart-bar-arrow">›</span>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="productModal">
+    <div class="mhead">
+      <div class="modal-handle"></div>
+      <button class="close-btn" onclick="closeModalDirect()">&#x2715;</button>
+    </div>
+    <div id="mImg"></div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
+<!-- CART MODAL -->
+<div class="cart-overlay" id="cartOverlay">
+  <div class="cart-modal">
+    <div class="cart-header">
+      <span style="font-size:20px">🛒</span>
+      <span class="cart-title" data-fi="Ostoehdotus / Tarjouspyyntö" data-en="Purchase Proposal / Quote Request">Ostoehdotus / Tarjouspyyntö</span>
+      <button class="cart-close" onclick="closeCart()">&#x2715;</button>
+    </div>
+    <div class="cart-list" id="cartList"></div>
+    <div class="cart-footer">
+      <div class="customer-field">
+        <div class="customer-label" data-fi="👤 Asiakas / Vastaanottaja" data-en="👤 Customer / Recipient">👤 Asiakas / Vastaanottaja</div>
+        <input class="customer-input" id="customerName" type="text" placeholder="Asiakkaan nimi tai yritys…" data-fi="Asiakkaan nimi tai yritys…" data-en="Customer name or company…" autocomplete="off">
+      </div>
+      <div class="cart-totals" id="cartTotals"></div>
+      <button class="print-btn" onclick="printOrder()">
+        <span>📄</span> <span data-fi="Tulosta PDF-muodossa" data-en="Print as PDF">Tulosta PDF-muodossa</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT DOCUMENT -->
+<div class="print-doc" id="printDoc"></div>
+
+<script>
+const P=[{"nro":"10254","nimi":"SAUNIA LÖYLYKAUHA  RUOSTUMATON TERÄS ULKOPINTA KUPAROITU, MUSTA KAHVA","hinta":6.3,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-001-08dd5f82.jpg","source":"nikkarien","cart_key":"N:10254","nimi_en":"STAINLESS STEEL SAUNA LADLE 48 CM, OUTER SURFACE COPPER PLATED, BLACK WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA  RUOSTUMATON TERÄS ULKOPINTA KUPAROITU, MUSTA KAHVA"},{"nro":"10292","nimi":"SAUNIA SAUNAKIULU 4 LTR RUOSTUMATON TERÄS ULKOPINTA KUPAROITU, MUSTA  KAHVA","hinta":12.8,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-002-c3814656.jpg","source":"nikkarien","cart_key":"N:10292","nimi_en":"STAINLESS STEEL SAUNABOWL 4 LTR, OUTER SURFACE COPPER PLATED, BLACK WOOD HANDLE","nimi_fi":"SAUNIA SAUNAKIULU 4 LTR RUOSTUMATON TERÄS ULKOPINTA KUPAROITU, MUSTA  KAHVA"},{"nro":"10354","nimi":"SAUNIA LÖYLYKAUHA RUOSTUMATON TERÄS MUSTALLA KAHVALLA","hinta":4.7,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-003-e5d478fd.jpg","source":"nikkarien","cart_key":"N:10354","nimi_en":"STAINLESS STEEL SAUNA LADLE 48 CM, BLACK WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA RUOSTUMATON TERÄS MUSTALLA KAHVALLA"},{"nro":"10392","nimi":"SAUNIA SAUNAKIULU 4 LTR RUOSTUMATON TERÄS MUSTALLA KAHVALLA","hinta":11.1,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-004-dbd838d8.jpg","source":"nikkarien","cart_key":"N:10392","nimi_en":"STAINLESS STEEL SAUNABOWL 4 LTR, BLACK WOOD HANDLE","nimi_fi":"SAUNIA SAUNAKIULU 4 LTR RUOSTUMATON TERÄS MUSTALLA KAHVALLA"},{"nro":"10442","nimi":"SAUNIA KIULUSETTI RUOSTUMATON TERÄS / KUPAROITU ULKOPINTA","hinta":19.5,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Setti","kuva":"images/img-005-b6e6631f.jpg","source":"nikkarien","cart_key":"N:10442","nimi_en":"SAUNABOWL AND SAUNALADLE SET STAINLESS STEEL OUTER SURFACE COPPER PLATED, BLACK WOOD HANDLES","nimi_fi":"SAUNIA KIULUSETTI RUOSTUMATON TERÄS / KUPAROITU ULKOPINTA"},{"nro":"10444","nimi":"SAUNIA KIULUSETTI RUOSTUMATON TERÄS / MUSTA ULKOPINTA","hinta":16.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Setti","kuva":"images/img-006-fe3b48d4.jpg","source":"nikkarien","cart_key":"N:10444","nimi_en":"SAUNABOWL AND SAUNALADLE SET STAINLESS STEEL OUTER SURFACE MAT BLACK, BLACK WOOD HANDLE","nimi_fi":"SAUNIA KIULUSETTI RUOSTUMATON TERÄS / MUSTA ULKOPINTA"},{"nro":"10492","nimi":"SAUNIA ECONOMY KIULU 4 L RUOSTUMATON TERÄS","hinta":10.5,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-007-f1f78d9f.jpg","source":"nikkarien","cart_key":"N:10492","nimi_en":"ECONOMY STAINLESS STEEL SAUNA BOWL 4 L","nimi_fi":"SAUNIA ECONOMY KIULU 4 L RUOSTUMATON TERÄS"},{"nro":"10654","nimi":"SAUNIA LÖYLYKAUHA RUOSTUMATON TERÄS, ULKOPINTA MUSTA, MUSTA PUUKAHVA","hinta":5.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-008-172aa01c.jpg","source":"nikkarien","cart_key":"N:10654","nimi_en":"STAINLESS STEEL SAUNA LADLE 48 CM, BLACK OUTER SURFACE, BLACK WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA RUOSTUMATON TERÄS, ULKOPINTA MUSTA, MUSTA PUUKAHVA"},{"nro":"10658","nimi":"SAUNIA ECONOMY LÖYLYKAUHA RUOSTUMATON TERÄS, 45 CM","hinta":4.8,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-009-f224966c.jpg","source":"nikkarien","cart_key":"N:10658","nimi_en":"ECONOMY STAINLESS STEEL SAUNA LADLE 48 CM","nimi_fi":"SAUNIA ECONOMY LÖYLYKAUHA RUOSTUMATON TERÄS, 45 CM"},{"nro":"10672","nimi":"SAUNIA KIULU JA KAUHA-SETTI. RUOSTUMATON TERÄS MUSTAT KAHVAT","hinta":15.7,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Setti","kuva":"images/img-010-413cfc17.jpg","source":"nikkarien","cart_key":"N:10672","nimi_en":"STAINLESS STEEL SAUNABOWL AND SAUNA LADLE SET. BLACK HANDLES","nimi_fi":"SAUNIA KIULU JA KAUHA-SETTI. RUOSTUMATON TERÄS MUSTAT KAHVAT"},{"nro":"10692","nimi":"SAUNIA SAUNAKIULU 4 LTR RUOSTUMATON TERÄS, ULKOPINTA MUSTA, MUSTA PUUKAHVA","hinta":11.6,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-011-d6cd9462.jpg","source":"nikkarien","cart_key":"N:10692","nimi_en":"STAINLESS STEEL SAUNABOWL 4 LTR, BLACK OUTER SURFACE, BLACK WOOD HANDLE","nimi_fi":"SAUNIA SAUNAKIULU 4 LTR RUOSTUMATON TERÄS, ULKOPINTA MUSTA, MUSTA PUUKAHVA"},{"nro":"10994","nimi":"SAUNIA KIULU, KAUHA JA 2x500 ML LÖYLYTUOKSUT - SETTI","hinta":23.2,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-012-1922719b.jpg","source":"nikkarien","cart_key":"N:10994","nimi_en":"SAUNA BOWL, SAUNA LADLE AND 2x 500ml SAUNA  SCENTS SET","nimi_fi":"SAUNIA KIULU, KAUHA JA 2x500 ML LÖYLYTUOKSUT - SETTI"},{"nro":"10996","nimi":"SAUNIA KIULU, KAUHA JA 500 ML LÖYLYTUOKSU - SETTI","hinta":20.5,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-013-3f2e6038.jpg","source":"nikkarien","cart_key":"N:10996","nimi_en":"SAUNA BOWL, SAUNA LADLE AND 500ML SAUNA SCENT - SET","nimi_fi":"SAUNIA KIULU, KAUHA JA 500 ML LÖYLYTUOKSU - SETTI"},{"nro":"154","nimi":"SAUNIA SAUNAMITTARI VILLE JA KAISA MÄNTY","hinta":10.6,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Mittari","kuva":"images/img-014-49153022.jpg","source":"nikkarien","cart_key":"N:154","nimi_en":"SAUNIA SAUNA THERMOMETER «VILLE & KAISA» PINE WOOD","nimi_fi":"SAUNIA SAUNAMITTARI VILLE JA KAISA MÄNTY"},{"nro":"251","nimi":"SAUNIA VESIKAUHA 1,5 ltr MATTA MUSTA, RUOSTUMATONTA TERÄSTÄ","hinta":10.0,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kauha","kuva":"images/img-015-42fd900e.jpg","source":"nikkarien","cart_key":"N:251","nimi_en":"SAUNIA WATER LADLE 1,5 LTR MATT BLACK","nimi_fi":"SAUNIA VESIKAUHA 1,5 ltr MATTA MUSTA, RUOSTUMATONTA TERÄSTÄ"},{"nro":"252","nimi":"SAUNIA PESUVATI 7 ltr MATTA MUSTA, RUOSTUMATONTA TERÄSTÄ","hinta":15.7,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-016-d5e69808.jpg","source":"nikkarien","cart_key":"N:252","nimi_en":"SAUNIA WASH BASIN 7 LTR MATT BLACK","nimi_fi":"SAUNIA PESUVATI 7 ltr MATTA MUSTA, RUOSTUMATONTA TERÄSTÄ"},{"nro":"257","nimi":"SAUNIA SAUNASANKO 5L, MUSTA TPR","hinta":16.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-017-b7721883.jpg","source":"nikkarien","cart_key":"N:257","nimi_en":"SAUNIA SAUNAPAIL 5L, BLACK TPR","nimi_fi":"SAUNIA SAUNASANKO 5L, MUSTA TPR"},{"nro":"258","nimi":"SAUNIA LÖYLYKAUHA, MUSTA TPR","hinta":7.1,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-018-6c97608b.jpg","source":"nikkarien","cart_key":"N:258","nimi_en":"SAUNIA SAUNALADLE BLACK TPR","nimi_fi":"SAUNIA LÖYLYKAUHA, MUSTA TPR"},{"nro":"267","nimi":"SAUNIA SAUNASANKO 5L, KUPARINVÄRI TPR","hinta":16.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-019-234d7206.jpg","source":"nikkarien","cart_key":"N:267","nimi_en":"SAUNIA SAUNAPAIL 5L,COPPER COLOR","nimi_fi":"SAUNIA SAUNASANKO 5L, KUPARINVÄRI TPR"},{"nro":"268","nimi":"SAUNIA LÖYLYKAUHA KUPARINVÄRI TPR","hinta":7.1,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-020-ad26744d.jpg","source":"nikkarien","cart_key":"N:268","nimi_en":"SAUNIA SAUNALADLE COPPER COLOR","nimi_fi":"SAUNIA LÖYLYKAUHA KUPARINVÄRI TPR"},{"nro":"276","nimi":"SAUNIA LÖYLYKAUHA KONJAKINVÄRI TPR","hinta":16.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-021-bd86c2ad.jpg","source":"nikkarien","cart_key":"N:276","nimi_en":"SAUNIA SAUNALADLE COGNAC TPR","nimi_fi":"SAUNIA LÖYLYKAUHA KONJAKINVÄRI TPR"},{"nro":"277","nimi":"SAUNIA SAUNASANKO 5 LTR KONJAKINVÄRI TPR","hinta":7.1,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-022-71e1f895.jpg","source":"nikkarien","cart_key":"N:277","nimi_en":"SAUNIA SAUNAPAIL 5L,COGNAC TPR","nimi_fi":"SAUNIA SAUNASANKO 5 LTR KONJAKINVÄRI TPR"},{"nro":"351","nimi":"SAUNIA VESIKAUHA 1,5 ltr KUPARINVÄRI","hinta":10.2,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kauha","kuva":"images/img-023-7a49a7c3.jpg","source":"nikkarien","cart_key":"N:351","nimi_en":"SAUNIA WATER LADLE 1,5 LTR COPPER COLOR","nimi_fi":"SAUNIA VESIKAUHA 1,5 ltr KUPARINVÄRI"},{"nro":"352","nimi":"SAUNIA PESUVATI 7 ltr KUPARINVÄRI","hinta":16.7,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-024-bc58f26f.jpg","source":"nikkarien","cart_key":"N:352","nimi_en":"SAUNIA WASH BASIN 7 LTR COPPER COLOR","nimi_fi":"SAUNIA PESUVATI 7 ltr KUPARINVÄRI"},{"nro":"407","nimi":"SAUNIA SAUNACLEAN 500 ML SAUNAN PESUAINE","hinta":5.4,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-025-ef732004.jpg","source":"nikkarien","cart_key":"N:407","nimi_en":"SAUNIA SAUNA CLEAN 500 МL SAUNA CLEANING LIQUID","nimi_fi":"SAUNIA SAUNACLEAN 500 ML SAUNAN PESUAINE"},{"nro":"408","nimi":"SAUNIA PARAFIINIÖLJY 500 ML SAUNAN PUUPINTOJEN KÄSITTELYAINE","hinta":8.65,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-026-a947b955.jpg","source":"nikkarien","cart_key":"N:408","nimi_en":"SAUNIA PARAFFIN OIL 500 ML,  100% OIL","nimi_fi":"SAUNIA PARAFIINIÖLJY 500 ML SAUNAN PUUPINTOJEN KÄSITTELYAINE"},{"nro":"418","nimi":"SAUNIA SAUNAMITTARI MUSTA","hinta":10.2,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Mittari","kuva":"images/img-027-2671ed5d.jpg","source":"nikkarien","cart_key":"N:418","nimi_en":"SAUNIA SAUNA THERMOMETER BLACK DARK ALDER","nimi_fi":"SAUNIA SAUNAMITTARI MUSTA"},{"nro":"429","nimi":"SAUNIA LAUDETYYNY 28 X 33,5 CM HAAPA","hinta":12.3,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-028-bc122d4c.jpg","source":"nikkarien","cart_key":"N:429","nimi_en":"SAUNIA HEAD REST 28 Х 33,5 СМ ASPEN","nimi_fi":"SAUNIA LAUDETYYNY 28 X 33,5 CM HAAPA"},{"nro":"429L","nimi":"SAUNIA LAUDETYYNY 28 X 33,5 CM LÄMPÖKÄSITELTY PUU, ÖLJYTTY","hinta":14.3,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-029-1b4e5c1f.jpg","source":"nikkarien","cart_key":"N:429L","nimi_en":"SAUNIA HEAD REST 28 Х 33,5 СМ HEAT TREATED ASPEN OILED","nimi_fi":"SAUNIA LAUDETYYNY 28 X 33,5 CM LÄMPÖKÄSITELTY PUU, ÖLJYTTY"},{"nro":"439","nimi":"SAUNIA LAUDELIINA 45 X 55 CM MUSTA 100 % PELLAVA","hinta":6.1,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-030-56b65db2.jpg","source":"nikkarien","cart_key":"N:439","nimi_en":"SAUNIA LINEN SEAT COVER, BLACK,  45 X 55 CM, 100% LINEN","nimi_fi":"SAUNIA LAUDELIINA 45 X 55 CM MUSTA 100 % PELLAVA"},{"nro":"439C","nimi":"SAUNIA LAUDELIINA 45 X 55 CM MUSTA-VALKO RAIDALLINEN 100% PELLAVA","hinta":6.1,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-031-28956fdd.jpg","source":"nikkarien","cart_key":"N:439C","nimi_en":"SAUNIA LINEN SEAT COVER,STRIPED 45 X 55 CM,  100% LINEN","nimi_fi":"SAUNIA LAUDELIINA 45 X 55 CM MUSTA-VALKO RAIDALLINEN 100% PELLAVA"},{"nro":"440L","nimi":"SAUNIA SAUNAMITTARI LÄMPÖKÄSITELTY PUU / RUOSTUMATON TERÄS","hinta":14.9,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-032-83bd12bc.jpg","source":"nikkarien","cart_key":"N:440L","nimi_en":"SAUNIA THERMOMETER THERMOWOOD AND STAINLESS STEEL","nimi_fi":"SAUNIA SAUNAMITTARI LÄMPÖKÄSITELTY PUU / RUOSTUMATON TERÄS"},{"nro":"452L","nimi":"SAUNIA LÖYLYKAUHA 40 CM LÄMPÖKÄSITELTY PUU, ÖLJYTTY","hinta":9.8,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Kauha","kuva":"images/img-033-5afbbbb1.jpg","source":"nikkarien","cart_key":"N:452L","nimi_en":"SAUNIA SAUNA LADLE 40 CM HEAT TREATED ASPEN OILED","nimi_fi":"SAUNIA LÖYLYKAUHA 40 CM LÄMPÖKÄSITELTY PUU, ÖLJYTTY"},{"nro":"454","nimi":"SAUNIA LÖYLYKAUHA 48 CM RUOSTUMATON TERÄS, PYÖKKI KAHVALLA","hinta":9.1,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-034-cadcbaf1.jpg","source":"nikkarien","cart_key":"N:454","nimi_en":"SAUNIA SAUNA LADLE 48 CM STAINLESS STEEL WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA 48 CM RUOSTUMATON TERÄS, PYÖKKI KAHVALLA"},{"nro":"457","nimi":"SAUNIA LÖYLYKAUHA 48 CM KUPARI,  PYÖKKI KAHVALLA","hinta":8.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-035-441db25a.jpg","source":"nikkarien","cart_key":"N:457","nimi_en":"SAUNIA SAUNA LADLE 48 CM COPPER WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA 48 CM KUPARI,  PYÖKKI KAHVALLA"},{"nro":"460","nimi":"SAUNIA SAUNAMITTARI KAPILAARI MÄNTY","hinta":9.1,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Mittari","kuva":"images/img-036-a6e66998.jpg","source":"nikkarien","cart_key":"N:460","nimi_en":"SAUNIA SAUNA CAPILLARY THERMOMETER, PINE WOOD","nimi_fi":"SAUNIA SAUNAMITTARI KAPILAARI MÄNTY"},{"nro":"460L","nimi":"SAUNIA SAUNAMITTARI KAPILAARI LÄMPÖKÄSITELTY PUU","hinta":13.2,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-037-0af7aec2.jpg","source":"nikkarien","cart_key":"N:460L","nimi_en":"SAUNIA SAUNA CAPILLARY THERMOMETER, THERMOWOOD","nimi_fi":"SAUNIA SAUNAMITTARI KAPILAARI LÄMPÖKÄSITELTY PUU"},{"nro":"462","nimi":"SAUNIA SAUNAMITTARI NELIÖ 12 X 12 CM MÄNTY","hinta":7.6,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Mittari","kuva":"images/img-038-b39d96d6.jpg","source":"nikkarien","cart_key":"N:462","nimi_en":"SAUNIA SAUNA THERMOMETER «SQUARE» 12 x 12 CM PINE WOOD","nimi_fi":"SAUNIA SAUNAMITTARI NELIÖ 12 X 12 CM MÄNTY"},{"nro":"462L","nimi":"SAUNIA SAUNAMITTARI LÄMPÖKÄSITELTY","hinta":8.1,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Mittari","kuva":"images/img-039-d9dc9a53.jpg","source":"nikkarien","cart_key":"N:462L","nimi_en":"SAUNIA SAUNA THERMOMETER THERMOWOOD","nimi_fi":"SAUNIA SAUNAMITTARI LÄMPÖKÄSITELTY"},{"nro":"462TL","nimi":"SAUNIA SAUNAMITTARI NELIÖ 12 X 12 CM TERVALEPPÄ","hinta":8.3,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Mittari","kuva":"images/img-040-73e960f5.jpg","source":"nikkarien","cart_key":"N:462TL","nimi_en":"SAUNIA SAUNA THERMOMETER «SQUARE» 12 x 12 CM DARK ALDER","nimi_fi":"SAUNIA SAUNAMITTARI NELIÖ 12 X 12 CM TERVALEPPÄ"},{"nro":"465","nimi":"SAUNIA TUPLAMITTARI MÄNTY","hinta":15.2,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-041-79ae2ed0.jpg","source":"nikkarien","cart_key":"N:465","nimi_en":"SAUNIA SAUNA THERMO HYGROMETER PINE WOOD","nimi_fi":"SAUNIA TUPLAMITTARI MÄNTY"},{"nro":"465L","nimi":"SAUNIA SAUNAN TUPLAMITTARI LÄMPÖKÄSITELTY","hinta":16.2,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-042-db8e3899.jpg","source":"nikkarien","cart_key":"N:465L","nimi_en":"SAUNIA SAUNA DOUBLEMETER THERMOWOOD","nimi_fi":"SAUNIA SAUNAN TUPLAMITTARI LÄMPÖKÄSITELTY"},{"nro":"465M","nimi":"SAUNIA SAUNAN TUPLAMITTARI MUSTA","hinta":19.5,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-043-cd7cd4bb.jpg","source":"nikkarien","cart_key":"N:465M","nimi_en":"SAUNIA SAUNA DOUBLEMETER THERMO&HYGRO, BLACK","nimi_fi":"SAUNIA SAUNAN TUPLAMITTARI MUSTA"},{"nro":"469L","nimi":"SAUNIA SAUNAHARJA 29 CM LÄMPÖKÄSITELTY PUUVARSI","hinta":6.1,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Harja","kuva":"images/img-044-6baa86e7.jpg","source":"nikkarien","cart_key":"N:469L","nimi_en":"SAUNIA SAUNA BRUSH 29 CM OILED THERMOWOOD, 50% NYLON, 50% NATURAL  COW HAIR","nimi_fi":"SAUNIA SAUNAHARJA 29 CM LÄMPÖKÄSITELTY PUUVARSI"},{"nro":"470","nimi":"SAUNIA SAUNAHARJA 39 CM KOIVUVARSI","hinta":6.1,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Harja","kuva":"images/img-045-3f633f11.jpg","source":"nikkarien","cart_key":"N:470","nimi_en":"SAUNIA SAUNA BRUSH 39 CM BIRCH WOOD 50% NYLON, 50% NATURAL  COW HAIR","nimi_fi":"SAUNIA SAUNAHARJA 39 CM KOIVUVARSI"},{"nro":"470L","nimi":"SAUNIA SAUNAHARJA 39 CM LÄMPÖKÄSITELTY PUUVARSI","hinta":7.1,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Harja","kuva":"images/img-046-58d206bf.jpg","source":"nikkarien","cart_key":"N:470L","nimi_en":"SAUNIA SAUNA BRUSH 39 CM OILED THERMOWOOD, 50% NYLON, 50% NATURAL COW HAIR","nimi_fi":"SAUNIA SAUNAHARJA 39 CM LÄMPÖKÄSITELTY PUUVARSI"},{"nro":"471M","nimi":"SAUNIA SAUNAN LÄMPÖMITTARI MUSTA","hinta":11.6,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-047-f0a41d82.jpg","source":"nikkarien","cart_key":"N:471M","nimi_en":"SAUNIA SAUNA THERMOMETER ROUND Ø 12 CM BLACK","nimi_fi":"SAUNIA SAUNAN LÄMPÖMITTARI MUSTA"},{"nro":"471TL","nimi":"SAUNIA SAUNAMITTARI PYÖREÄ Ø 11 CM TERVALEPPÄ","hinta":8.7,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Mittari","kuva":"images/img-048-dfd24f09.jpg","source":"nikkarien","cart_key":"N:471TL","nimi_en":"SAUNIA SAUNA THERMOMETER ROUND Ø 11 CM DARK ALDER","nimi_fi":"SAUNIA SAUNAMITTARI PYÖREÄ Ø 11 CM TERVALEPPÄ"},{"nro":"481","nimi":"SAUNIA SAUNASANKO 10 L RUOSTUMATON TERÄS, KÖYSIPÄÄLLYSETTY TERÄSKAHVA","hinta":19.4,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-049-5ed98489.jpg","source":"nikkarien","cart_key":"N:481","nimi_en":"SAUNIA SAUNA BUCKET 10L STAINLESS STEEL WITH ROPE COVERED STEEL HANDLE","nimi_fi":"SAUNIA SAUNASANKO 10 L RUOSTUMATON TERÄS, KÖYSIPÄÄLLYSETTY TERÄSKAHVA"},{"nro":"488","nimi":"SAUNIA KUPARIKIULU 4L KUPARI, PYÖKKI KAHVALLA","hinta":21.2,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-050-1078c68b.jpg","source":"nikkarien","cart_key":"N:488","nimi_en":"SAUNIA COPPER SAUNA BOWL 4L COPPER WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA KUPARIKIULU 4L KUPARI, PYÖKKI KAHVALLA"},{"nro":"492","nimi":"SAUNIA SAUNAKIULU 4,5L RUOSTUMATON TERÄS, KIILLOITETTU, PYÖKKI KAHVALLA","hinta":16.5,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-051-b171ed70.jpg","source":"nikkarien","cart_key":"N:492","nimi_en":"STAINLESS STEEL SAUNA BOWL 4,5L SHINY STAINLESS STEEL WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA SAUNAKIULU 4,5L RUOSTUMATON TERÄS, KIILLOITETTU, PYÖKKI KAHVALLA"},{"nro":"512L","nimi":"SAUNIA TUPLAMITTARI LÄMPÖ- JA KOSTEUSMITTARI , LÄMPÖKÄSITELTY PUU, VAALEA RAITA","hinta":35.9,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-052-f88b0da2.jpg","source":"nikkarien","cart_key":"N:512L","nimi_en":"SAUNIA SAUNA THERMO HYGROMETER THERMOWOOD WITH A STRIPE","nimi_fi":"SAUNIA TUPLAMITTARI LÄMPÖ- JA KOSTEUSMITTARI , LÄMPÖKÄSITELTY PUU, VAALEA RAITA"},{"nro":"539","nimi":"SAUNIA SAUNAN LÄMPÖMITTARI RUOSTUMATONTA TERÄSTÄ","hinta":12.9,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-053-8388cc24.jpg","source":"nikkarien","cart_key":"N:539","nimi_en":"SAUNIA SAUNA THERMOMETER STAINLESS STEEL","nimi_fi":"SAUNIA SAUNAN LÄMPÖMITTARI RUOSTUMATONTA TERÄSTÄ"},{"nro":"539C","nimi":"SAUNIA SAUNAN LÄMPÖMITTARI KUPARIA","hinta":12.9,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-054-aa51916c.jpg","source":"nikkarien","cart_key":"N:539C","nimi_en":"SAUNIA SAUNA THERMOMETER COPPER","nimi_fi":"SAUNIA SAUNAN LÄMPÖMITTARI KUPARIA"},{"nro":"539M","nimi":"SAUNIA SAUNAMITTARI MUSTA, RUOSTUMATONTA TERÄSTÄ","hinta":12.9,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-055-51bdeb1a.jpg","source":"nikkarien","cart_key":"N:539M","nimi_en":"SAUNIA SAUNA THERMPMETER STAINLESS STEEL, BLACK","nimi_fi":"SAUNIA SAUNAMITTARI MUSTA, RUOSTUMATONTA TERÄSTÄ"},{"nro":"540","nimi":"SAUNIA TIIMALASI 15 MIN, MÄNTY","hinta":13.6,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-056-4b323147.jpg","source":"nikkarien","cart_key":"N:540","nimi_en":"SAUNIA 15 MINUTES SAND TIMER PINE WOOD","nimi_fi":"SAUNIA TIIMALASI 15 MIN, MÄNTY"},{"nro":"540L","nimi":"SAUNIA TIIMALASI 15 MIN, LÄMPÖKÄSITELTY PUU","hinta":16.3,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-057-6b6c7c9c.jpg","source":"nikkarien","cart_key":"N:540L","nimi_en":"SAUNIA 15 MINUTES SAND TIMER, THERMOWOOD","nimi_fi":"SAUNIA TIIMALASI 15 MIN, LÄMPÖKÄSITELTY PUU"},{"nro":"540M","nimi":"SAUNIA SAUNAN TIIMALASI 15 MIN MUSTA","hinta":16.3,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-058-08eb6d1b.jpg","source":"nikkarien","cart_key":"N:540M","nimi_en":"SAUNIA 15 MINUTES SAND TIMER, BLACK","nimi_fi":"SAUNIA SAUNAN TIIMALASI 15 MIN MUSTA"},{"nro":"543","nimi":"SAUNIA TUPLAMITTARI MÄNTY","hinta":21.3,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-059-82b6267b.jpg","source":"nikkarien","cart_key":"N:543","nimi_en":"SAUNIA SAUNA THERMO HYGROMETER PINE WOOD","nimi_fi":"SAUNIA TUPLAMITTARI MÄNTY"},{"nro":"543TL","nimi":"SAUNIA TUPLAMITTARI TERVALEPPÄ","hinta":24.1,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-060-10c09f17.jpg","source":"nikkarien","cart_key":"N:543TL","nimi_en":"SAUNIA SAUNA THERMO HYGROMETER DARK ALDER","nimi_fi":"SAUNIA TUPLAMITTARI TERVALEPPÄ"},{"nro":"545","nimi":"SAUNIA LÄMPÖMITTARI MÄNTY","hinta":13.2,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-061-c5b7d322.jpg","source":"nikkarien","cart_key":"N:545","nimi_en":"SAUNIA THERMOMETER PINE WOOD","nimi_fi":"SAUNIA LÄMPÖMITTARI MÄNTY"},{"nro":"545TL","nimi":"SAUNIA LÄMPÖMITTARI TERVALEPPÄ","hinta":15.6,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-062-124decf3.jpg","source":"nikkarien","cart_key":"N:545TL","nimi_en":"SAUNIA THERMOMETER DARK ALDER","nimi_fi":"SAUNIA LÄMPÖMITTARI TERVALEPPÄ"},{"nro":"57830","nimi":"SAUNIA LÖYLYKAUHA 30 CM KUPARI, PYÖKKI KAHVALLA","hinta":6.3,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Kauha","kuva":"images/img-063-f8dc20cd.jpg","source":"nikkarien","cart_key":"N:57830","nimi_en":"SAUNIA SAUNA LADLE 30 CM COPPER WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA 30 CM KUPARI, PYÖKKI KAHVALLA"},{"nro":"591L","nimi":"SAUNIA 3-IN-1 LÄMPÖ- , KOSTEUSMITTARI JA TIIMALASI KOSTEUSMITTARI, HIUSKONEISTOLLA LÄMPÖKÄSITELTY PUU","hinta":54.3,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Mittari","kuva":"images/img-064-47dc4545.jpg","source":"nikkarien","cart_key":"N:591L","nimi_en":"SAUNIA 3-IN-1 SAUNA THERMO HYGROMETER-SAND TIMER, THERMOWOOD","nimi_fi":"SAUNIA 3-IN-1 LÄMPÖ- , KOSTEUSMITTARI JA TIIMALASI KOSTEUSMITTARI, HIUSKONEISTOLLA LÄMPÖKÄSITELTY PUU"},{"nro":"593L","nimi":"SAUNIA TIIMALASI 15 MIN KURVIKAS LÄMPÖKÄSITELTY PUU","hinta":17.5,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Mittari","kuva":"images/img-065-d2857934.jpg","source":"nikkarien","cart_key":"N:593L","nimi_en":"SAUNIA 15 MINUTES SAND TIMER, THERMOWOOD","nimi_fi":"SAUNIA TIIMALASI 15 MIN KURVIKAS LÄMPÖKÄSITELTY PUU"},{"nro":"652MM","nimi":"SAUNIA SAUNASANKO 6L, HIEKKAPUHALLETTU MATTAMUSTA, NOKALLA","hinta":19.3,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-066-9bb9612f.jpg","source":"nikkarien","cart_key":"N:652MM","nimi_en":"SAUNIA SAUNPAIL 6L, SAND BLASTED MATTE BLACK, WITH THE LIP","nimi_fi":"SAUNIA SAUNASANKO 6L, HIEKKAPUHALLETTU MATTAMUSTA, NOKALLA"},{"nro":"654","nimi":"SAUNIA PIKI LÖYLYKAUHA 43 CM, MUSTA","hinta":8.2,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-067-496507b6.jpg","source":"nikkarien","cart_key":"N:654","nimi_en":"SAUNIA SAUNA LADLE PIKI 43 CM, BLACK, STAINLESS STEEL","nimi_fi":"SAUNIA PIKI LÖYLYKAUHA 43 CM, MUSTA"},{"nro":"662","nimi":"SAUNIA SAUNASETTI, PUUKIULU 4L MUOVISISUKSELLA JA PUUKAUHA 40 CM","hinta":22.6,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-068-0b2ce68f.jpg","source":"nikkarien","cart_key":"N:662","nimi_en":"SAUNIA SAUNA SET: WOODEN BUCKET 4L W/ PLASTIC INSERT & SAUNA LADLE  40 СМ","nimi_fi":"SAUNIA SAUNASETTI, PUUKIULU 4L MUOVISISUKSELLA JA PUUKAUHA 40 CM"},{"nro":"662L","nimi":"SAUNIA SAUNASETTI, LÄMPÖKÄSITELTY PUUKIULU 4L JA – LÖYLYKAUHA 40 CM","hinta":27.3,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-069-4fc4688f.jpg","source":"nikkarien","cart_key":"N:662L","nimi_en":"SAUNIA SAUNA SET: WOODEN BUCKET 4L W/ PLASTIC INSERT& SAUNA LADLE  40 СМ, THERMOWOOD","nimi_fi":"SAUNIA SAUNASETTI, LÄMPÖKÄSITELTY PUUKIULU 4L JA – LÖYLYKAUHA 40 CM"},{"nro":"664","nimi":"SAUNIA SAUNASETTI, KUPARIKIULU 4L JA –LÖYLYKAUHA 48 CM","hinta":29.2,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-070-38135dd1.jpg","source":"nikkarien","cart_key":"N:664","nimi_en":"SAUNIA SAUNA SET: COPPER SAUNA BOWL 4L & SAUNA LADLE 40 СМ COPPER WITH BEECH WOOD HANDLES","nimi_fi":"SAUNIA SAUNASETTI, KUPARIKIULU 4L JA –LÖYLYKAUHA 48 CM"},{"nro":"665","nimi":"SAUNIA SAUNASETI, RUOSTUMATON TERÄS, KIULU 4,5L JA LÖYLYKAUHA 48 CM","hinta":24.7,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-071-3672e006.jpg","source":"nikkarien","cart_key":"N:665","nimi_en":"SAUNIA SAUNA SET: STAINLESS STEEL SAUNA BOWL 4,5L & SAUNA LADLE 40 СМ WITH BEECH WOOD HANDLES","nimi_fi":"SAUNIA SAUNASETI, RUOSTUMATON TERÄS, KIULU 4,5L JA LÖYLYKAUHA 48 CM"},{"nro":"678","nimi":"SAUNIA PATA SAUNASANKO MATTAMUSTA, PYÖKKI KAHVALLA","hinta":19.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-072-f7f7a956.jpg","source":"nikkarien","cart_key":"N:678","nimi_en":"SAUNIA PATA SAUNAPAIL ALL BLACK WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA PATA SAUNASANKO MATTAMUSTA, PYÖKKI KAHVALLA"},{"nro":"6782","nimi":"SAUNIA SAUNAKIULU 1L RUOSTUMATON TERÄS, PYÖKKI KAHVALLA","hinta":14.4,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-073-1df83fd1.jpg","source":"nikkarien","cart_key":"N:6782","nimi_en":"SAUNIA SAUNA BOWL 1L STAINLESS STEEL WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA SAUNAKIULU 1L RUOSTUMATON TERÄS, PYÖKKI KAHVALLA"},{"nro":"6783","nimi":"SAUNIA LÖYLYKAUHA 30 CM, RUOSTUMATON TERÄS,  PYÖKKI KAHVALLA","hinta":6.8,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Kauha","kuva":"images/img-074-e31e102c.jpg","source":"nikkarien","cart_key":"N:6783","nimi_en":"SAUNIA SAUNA LADLE 30CM STAINLESS STEEL  WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA 30 CM, RUOSTUMATON TERÄS,  PYÖKKI KAHVALLA"},{"nro":"6783M","nimi":"SAUNIA LÖYLYKAUHA 30CM MUSTA. RUOSTUMATON TERÄS","hinta":6.8,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Kauha","kuva":"images/img-075-27aa2a99.jpg","source":"nikkarien","cart_key":"N:6783M","nimi_en":"SAUNIA SAUNA LADLE 30 CM BLACK. STAINLESS STEEL","nimi_fi":"SAUNIA LÖYLYKAUHA 30CM MUSTA. RUOSTUMATON TERÄS"},{"nro":"679","nimi":"SAUNIA PATA LÖYLYKAUHA MATTAMUSTA, ALUMIINIA, PYÖKKI KAHVALLA","hinta":8.0,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-076-64e1ca5a.jpg","source":"nikkarien","cart_key":"N:679","nimi_en":"SAUNIA PATA SAUNALADLE BLACK WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA PATA LÖYLYKAUHA MATTAMUSTA, ALUMIINIA, PYÖKKI KAHVALLA"},{"nro":"680","nimi":"SAUNIA SAUNASANKO JA LÖYLYKAUHA SETTI RUOSTUMATON TERÄS, KUPAROITU ULKOPUOLI","hinta":20.1,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-077-f811d09f.jpg","source":"nikkarien","cart_key":"N:680","nimi_en":"SAUNIA SAUNAPAIL AND LADLE SET STAINLESS STEEL COPPER PLATED","nimi_fi":"SAUNIA SAUNASANKO JA LÖYLYKAUHA SETTI RUOSTUMATON TERÄS, KUPAROITU ULKOPUOLI"},{"nro":"686M","nimi":"SAUNIA PYÖRRE SAUNASANKO 6L HARJATTU ALUMIINI. MUSTA PUUKAHVA","hinta":19.25,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-078-65bac961.jpg","source":"nikkarien","cart_key":"N:686M","nimi_en":"SAUNIA PYÖRRE SAUNAPAIL 6, BRUSHED ALUMINIUM. WITH BLACK WOOD HANDLE","nimi_fi":"SAUNIA PYÖRRE SAUNASANKO 6L HARJATTU ALUMIINI. MUSTA PUUKAHVA"},{"nro":"687M","nimi":"SAUNIA PYÖRRE LÖYLYKAUHA 50 CM HARJATTU ALUMIINI. MUSTALLA PUUKAHVALLA","hinta":8.3,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-079-c07a6d42.jpg","source":"nikkarien","cart_key":"N:687M","nimi_en":"SAUNIA PYÖRRE SAUNALADLE 50CM BRUSHED ALUMINIUM. WITH BLACK WOOD HANDLE","nimi_fi":"SAUNIA PYÖRRE LÖYLYKAUHA 50 CM HARJATTU ALUMIINI. MUSTALLA PUUKAHVALLA"},{"nro":"688","nimi":"SAUNIA PYÖRRE SAUNA SANKO 6L MATTA MUSTA, PYÖKKI KAHVALLA","hinta":21.2,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-080-c66ff86d.jpg","source":"nikkarien","cart_key":"N:688","nimi_en":"SAUNIA SAUNA BUCKET «PYÖRRE» 6L MATT BLACK WITH  BEECH WOOD HANDLE","nimi_fi":"SAUNIA PYÖRRE SAUNA SANKO 6L MATTA MUSTA, PYÖKKI KAHVALLA"},{"nro":"689","nimi":"SAUNIA PYÖRRE LÖYLYKAUHA 50 CM MATTA MUSTA, PYÖKKI KAHVALLA","hinta":7.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-081-c7f1c3eb.jpg","source":"nikkarien","cart_key":"N:689","nimi_en":"SAUNIA SAUNA LADLE PYÖRRE 50 СМ MATT BLACK WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA PYÖRRE LÖYLYKAUHA 50 CM MATTA MUSTA, PYÖKKI KAHVALLA"},{"nro":"689MM","nimi":"SAUNIA PYÖRRE LÖYLYKAUHA HIEKKAPUHALLETTU MATTAMUSTA, PITKÄLLÄ PUUVARRELLA","hinta":7.8,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-082-503235f9.jpg","source":"nikkarien","cart_key":"N:689MM","nimi_en":"SAUNIA SAUNALADLE PYÖRRE, SANDBLASTED MATTE BLACK, WITH LONG WOODEN ARM","nimi_fi":"SAUNIA PYÖRRE LÖYLYKAUHA HIEKKAPUHALLETTU MATTAMUSTA, PITKÄLLÄ PUUVARRELLA"},{"nro":"690","nimi":"SAUNIA MUSTA-KUPARI SETTI: KIULU JA LÖYLYKAUHA MAALATTU RST / KUPAROITU","hinta":31.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Setti","kuva":"images/img-083-e96fc525.jpg","source":"nikkarien","cart_key":"N:690","nimi_en":"SAUNIA BUCKET AND LADLE SET BLACK STAINLESS STEEL WITH COPPER INSIDE","nimi_fi":"SAUNIA MUSTA-KUPARI SETTI: KIULU JA LÖYLYKAUHA MAALATTU RST / KUPAROITU"},{"nro":"692","nimi":"SAUNIA PIKI SAUNAKIULU 4,5 L, MUSTA, RUOSTUMATONTA TERÄSTÄ, PYÖKKI KAHVALLA","hinta":17.7,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-084-aca105d0.jpg","source":"nikkarien","cart_key":"N:692","nimi_en":"SAUNIA SAUNA BOWL PIKI 4,5L, BLACK  STAINLESS STEEL","nimi_fi":"SAUNIA PIKI SAUNAKIULU 4,5 L, MUSTA, RUOSTUMATONTA TERÄSTÄ, PYÖKKI KAHVALLA"},{"nro":"710TL","nimi":"SAUNIA SAUNAN LAMPUNVARJOSTIN 26 X 25 X 14 CM,  PINTA-ASENNUS, TERVALEPPÄ","hinta":18.5,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Muu","kuva":"images/img-085-77f5c23b.jpg","source":"nikkarien","cart_key":"N:710TL","nimi_en":"SAUNIA SAUNA LAMP SHADE 26 Х 25 Х 14 СМ DARK ALDER","nimi_fi":"SAUNIA SAUNAN LAMPUNVARJOSTIN 26 X 25 X 14 CM,  PINTA-ASENNUS, TERVALEPPÄ"},{"nro":"711H","nimi":"SAUNIA SAUNAN LAMPUNVARJOSTIN 32 X 30 X 12,5 CM, PINTA-ASENNUS, HAAPA","hinta":18.5,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Muu","kuva":"images/img-086-84152d03.jpg","source":"nikkarien","cart_key":"N:711H","nimi_en":"SAUNIA SAUNA LAMP SHADE 32 Х 30 Х 12,5 СМ ASPEN","nimi_fi":"SAUNIA SAUNAN LAMPUNVARJOSTIN 32 X 30 X 12,5 CM, PINTA-ASENNUS, HAAPA"},{"nro":"711TL","nimi":"SAUNIA SAUNAN LAMPUNVARJOSTIN 32 X 30 X 12,5 CM ,PINTA-ASENNUS, TERVALEPPÄ","hinta":18.5,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Muu","kuva":"images/img-087-c4b1fd03.jpg","source":"nikkarien","cart_key":"N:711TL","nimi_en":"SAUNIA SAUNA LAMP SHADE 32 Х 30 Х 12,5 СМ DARK ALDER","nimi_fi":"SAUNIA SAUNAN LAMPUNVARJOSTIN 32 X 30 X 12,5 CM ,PINTA-ASENNUS, TERVALEPPÄ"},{"nro":"713H","nimi":"SAUNIA LAUTASVENTTIILI 100mm, HAAPAA","hinta":17.4,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-088-b9900df4.jpg","source":"nikkarien","cart_key":"N:713H","nimi_en":"SAUNIA VENTILATION PLATE 100 mm, ASPEN, WITH METAL PART","nimi_fi":"SAUNIA LAUTASVENTTIILI 100mm, HAAPAA"},{"nro":"713TL","nimi":"SAUNIA LAUTASVENTTIILI 100mm, TERVALEPPÄÄ","hinta":17.4,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-089-bbaff397.jpg","source":"nikkarien","cart_key":"N:713TL","nimi_en":"SAUNIA VENTILATION PLATE 100 mm, DARK ALDER, WITH METAL PART","nimi_fi":"SAUNIA LAUTASVENTTIILI 100mm, TERVALEPPÄÄ"},{"nro":"714H","nimi":"SAUNIA LAUTASVENTTIILI 125mm, HAAPAA","hinta":20.0,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-090-e2fca9b4.jpg","source":"nikkarien","cart_key":"N:714H","nimi_en":"SAUNIA VENTILATION PLATE 125 mm, ASPEN, WITH METAL PART","nimi_fi":"SAUNIA LAUTASVENTTIILI 125mm, HAAPAA"},{"nro":"714TL","nimi":"SAUNIA LAUTASVENTTIILI 125mm, TERVALEPPÄÄ","hinta":20.0,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-091-49f8c298.jpg","source":"nikkarien","cart_key":"N:714TL","nimi_en":"SAUNIA VENTILATION PLATE 125 mm, DARK ALDER, WITH METAL PART","nimi_fi":"SAUNIA LAUTASVENTTIILI 125mm, TERVALEPPÄÄ"},{"nro":"715","nimi":"SAUNIA SAUNAN IV-RITILÄ LIUKUOVELLA 30 X 13 X 3 CM, MÄNTY","hinta":10.3,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Muu","kuva":"images/img-092-44ec2d52.jpg","source":"nikkarien","cart_key":"N:715","nimi_en":"SAUNA VENTILATION HATCH WITH SLIDING DOOR 30 Х 13 Х 3 СМ PINE WOOD","nimi_fi":"SAUNIA SAUNAN IV-RITILÄ LIUKUOVELLA 30 X 13 X 3 CM, MÄNTY"},{"nro":"715L","nimi":"SAUNIA IV-RITILÄ LIUKUOVELLA 30 X 13 X 3 CM, LÄMPÖKÄSITELTY PUU","hinta":22.9,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Muu","kuva":"images/img-093-1bb18966.jpg","source":"nikkarien","cart_key":"N:715L","nimi_en":"SAUNIA VENTILATION HATCH WITH SLIDING DOOR, 30 X 13 X 3 CM, HEAT TREATED ASPEN","nimi_fi":"SAUNIA IV-RITILÄ LIUKUOVELLA 30 X 13 X 3 CM, LÄMPÖKÄSITELTY PUU"},{"nro":"715TL","nimi":"SAUNIA SAUNAN IV-RITILÄ LIUKUOVELLA 30 X 13 X 3 CM, TERVALEPPÄ","hinta":11.8,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Muu","kuva":"images/img-094-5cc53aa5.jpg","source":"nikkarien","cart_key":"N:715TL","nimi_en":"SAUNA VENTILATION HATCH WITH SLIDING DOOR 30 Х 13 Х 3 СМ DARK ALDER","nimi_fi":"SAUNIA SAUNAN IV-RITILÄ LIUKUOVELLA 30 X 13 X 3 CM, TERVALEPPÄ"},{"nro":"717L","nimi":"SAUNIA LAUTASVENTTIILI 100mm, LÄMPÖPUU, SORMIKOLOILLA","hinta":20.8,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-095-43c8d318.jpg","source":"nikkarien","cart_key":"N:717L","nimi_en":"SAUNIA VENTILATION PLATE 100mm THERMO","nimi_fi":"SAUNIA LAUTASVENTTIILI 100mm, LÄMPÖPUU, SORMIKOLOILLA"},{"nro":"718L","nimi":"SAUNIA LAUTASVENTTIILI 125mm. LÄMPÖPUU, SORMIKOLOILLA","hinta":21.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-096-fd2e8c98.jpg","source":"nikkarien","cart_key":"N:718L","nimi_en":"SAUNIA VENTILATION PLATE 125mm THERMO","nimi_fi":"SAUNIA LAUTASVENTTIILI 125mm. LÄMPÖPUU, SORMIKOLOILLA"},{"nro":"729","nimi":"SAUNIA LAUDETYYNY LUXUS 34 X 38 CM HAAPA JA  LÄMPÖKÄSITELTYÄ PUUTA","hinta":20.5,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-097-e32e0d08.jpg","source":"nikkarien","cart_key":"N:729","nimi_en":"SAUNIA HEAD REST «LUXUS» 34 Х 38 СМ ASPEN AND THERMOWOOD","nimi_fi":"SAUNIA LAUDETYYNY LUXUS 34 X 38 CM HAAPA JA  LÄMPÖKÄSITELTYÄ PUUTA"},{"nro":"739","nimi":"SAUNIA LAUDELIINA 45 X 160 CM, MUSTA-VALKO RAIDALLINEN, 100% PELLAVAA","hinta":12.3,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-098-a9160a1b.jpg","source":"nikkarien","cart_key":"N:739","nimi_en":"SAUNIA LINEN COVER SEAT STRIPED 45 Х160 CM, 100% LINEN","nimi_fi":"SAUNIA LAUDELIINA 45 X 160 CM, MUSTA-VALKO RAIDALLINEN, 100% PELLAVAA"},{"nro":"739M","nimi":"SAUNIA LAUDELIINA 45 X 160 CM, MUSTA, 100% PELLAVAA","hinta":12.3,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-099-2a375eba.jpg","source":"nikkarien","cart_key":"N:739M","nimi_en":"SAUNIA TEXTILE SEAT COVER 45 X 160 CM BLACK, 100% LINEN","nimi_fi":"SAUNIA LAUDELIINA 45 X 160 CM, MUSTA, 100% PELLAVAA"},{"nro":"756","nimi":"SAUNIA JÄTTILÄISLÖYLYKAUHA 65 CM RUOSTUMATON TERÄS, PYÖKKI KAHVALLA","hinta":11.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-100-df2866e9.jpg","source":"nikkarien","cart_key":"N:756","nimi_en":"SAUNIA GIANT SAUNA LADLE 65 CM STAINLESS STEEL WITH BEECH WOOD HANDLE","nimi_fi":"SAUNIA JÄTTILÄISLÖYLYKAUHA 65 CM RUOSTUMATON TERÄS, PYÖKKI KAHVALLA"},{"nro":"766","nimi":"SAUNIA SUIHKU/KAATO-LÖYLYKAUHA RUOSTUMATON TERÄS 76CM/0,5L","hinta":17.9,"hinta_norm":null,"moq":1,"saldo":null,"ryhma":"Kauha","kuva":"images/img-101-702ce7e7.jpg","source":"nikkarien","cart_key":"N:766","nimi_en":"SAUNIA SHOWER SAUNALADLE, STAINLESS STEEL, 76CM/0,5L","nimi_fi":"SAUNIA SUIHKU/KAATO-LÖYLYKAUHA RUOSTUMATON TERÄS 76CM/0,5L"},{"nro":"800","nimi":"SAUNIA SAUNATUOKSU EUCALYPTUS 50 ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-102-9fd2a858.jpg","source":"nikkarien","cart_key":"N:800","nimi_en":"SAUNIA SAUNA SCENT EUCALYPTUS 50 ML","nimi_fi":"SAUNIA SAUNATUOKSU EUCALYPTUS 50 ML"},{"nro":"801","nimi":"SAUNIA SAUNATUOKSU KOIVUNLEHTI 50 ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-103-373cf113.jpg","source":"nikkarien","cart_key":"N:801","nimi_en":"SAUNIA SAUNA SCENT BIRCH LEAVES 50 ML","nimi_fi":"SAUNIA SAUNATUOKSU KOIVUNLEHTI 50 ML"},{"nro":"802","nimi":"SAUNIA SAUNATUOKSU HUNAJA-YRTTI 50 ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-104-12c8515f.jpg","source":"nikkarien","cart_key":"N:802","nimi_en":"SAUNIA SAUNA SCENT HONEY & HERBS 50 ML","nimi_fi":"SAUNIA SAUNATUOKSU HUNAJA-YRTTI 50 ML"},{"nro":"803","nimi":"SAUNIA SAUNATUOKSU TERVA 50 ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-105-50b2a6c3.jpg","source":"nikkarien","cart_key":"N:803","nimi_en":"SAUNIA SAUNA SCENT PINE TAR 50 ML","nimi_fi":"SAUNIA SAUNATUOKSU TERVA 50 ML"},{"nro":"804","nimi":"SAUNIA SAUNATUOKSU MINTTU 50 ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-106-7a4aceb3.jpg","source":"nikkarien","cart_key":"N:804","nimi_en":"SAUNIA SAUNA SCENT MINT 50 ML","nimi_fi":"SAUNIA SAUNATUOKSU MINTTU 50 ML"},{"nro":"805","nimi":"SAUNIA SAUNATUOKSU SITRUUNA 50 ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-107-c8d8c77f.jpg","source":"nikkarien","cart_key":"N:805","nimi_en":"SAUNIA SAUNA SCENT LEMON 50 ML","nimi_fi":"SAUNIA SAUNATUOKSU SITRUUNA 50 ML"},{"nro":"806","nimi":"SAUNIA SAUNATUOKSU KATAJANMARJA-GREIPPI 50ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-108-175d625c.jpg","source":"nikkarien","cart_key":"N:806","nimi_en":"SAUNIA SAUNA SCENT JUNIPERBERRY - GRAPEFRUIT 50ML","nimi_fi":"SAUNIA SAUNATUOKSU KATAJANMARJA-GREIPPI 50ML"},{"nro":"816","nimi":"SAUNIA TUOKSUBAARI, 5 TUOKSUA SAINÄTELINEESSÄ","hinta":15.85,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-109-ad0c6bd0.jpg","source":"nikkarien","cart_key":"N:816","nimi_en":"SAUNIA SAUNA SCENTS' BAR INCL. DIFFERENT SAUNA SCENTS ON THE WOODEN SHELF 5  X 50 ML","nimi_fi":"SAUNIA TUOKSUBAARI, 5 TUOKSUA SAINÄTELINEESSÄ"},{"nro":"830","nimi":"SAUNIA LÖYLYTUOKSU EUKALYPTUS 500ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-110-a5d17efb.jpg","source":"nikkarien","cart_key":"N:830","nimi_en":"SAUNIA SAUNA SCENT EUCALYPTUS 500 ML","nimi_fi":"SAUNIA LÖYLYTUOKSU EUKALYPTUS 500ML"},{"nro":"831","nimi":"SAUNIA LÖYLYTUOKSU KOIVUNLEHTI 500ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-111-f85a5f6f.jpg","source":"nikkarien","cart_key":"N:831","nimi_en":"SAUNIA SAUNA SCENT BIRCH LEAVES 500 ML","nimi_fi":"SAUNIA LÖYLYTUOKSU KOIVUNLEHTI 500ML"},{"nro":"832","nimi":"SAUNIA LÖYLYTUOKSU TERVA 500ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-112-0a93e8ad.jpg","source":"nikkarien","cart_key":"N:832","nimi_en":"SAUNIA SAUNA SCENT PINE TAR 500 ML","nimi_fi":"SAUNIA LÖYLYTUOKSU TERVA 500ML"},{"nro":"833","nimi":"SAUNIA LÖYLYTUOKSU HUNAJA-YRTTI 500ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-113-a01b63ea.jpg","source":"nikkarien","cart_key":"N:833","nimi_en":"SAUNIA SAUNA SCENT HONEY & HERBS 500 ML","nimi_fi":"SAUNIA LÖYLYTUOKSU HUNAJA-YRTTI 500ML"},{"nro":"834","nimi":"SAUNIA LÖYLYTUOKSU SITRUUNA 500ML","hinta":2.6,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Tuoksu","kuva":"images/img-114-98cb3eb2.jpg","source":"nikkarien","cart_key":"N:834","nimi_en":"SAUNIA SAUNA SCENT CITRON 500ML","nimi_fi":"SAUNIA LÖYLYTUOKSU SITRUUNA 500ML"},{"nro":"840","nimi":"SAUNIA TERRAKOTTA AROMIMALJA 14CM","hinta":19.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-115-e9041eac.jpg","source":"nikkarien","cart_key":"N:840","nimi_en":"SAUNIA TERRACOTTA AROMABOWL 14CM","nimi_fi":"SAUNIA TERRAKOTTA AROMIMALJA 14CM"},{"nro":"841","nimi":"SAUNIA SAUNAKAVERI KIVESTÄ 10cm","hinta":6.5,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-116-4979b0ba.jpg","source":"nikkarien","cart_key":"N:841","nimi_en":"SAUNIA STONE SAUNA BUDDY 10cm","nimi_fi":"SAUNIA SAUNAKAVERI KIVESTÄ 10cm"},{"nro":"842","nimi":"SAUNIA TERVATTU SAUNATONTTU (ERILAISIA,  HAHMOLAJITELMA)","hinta":9.8,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-117-975814a0.jpg","source":"nikkarien","cart_key":"N:842","nimi_en":"SAUNIA SAUNA ELF  TAR, DIFFERENT CHARACTERS","nimi_fi":"SAUNIA TERVATTU SAUNATONTTU (ERILAISIA,  HAHMOLAJITELMA)"},{"nro":"843","nimi":"SAUNIA LÖYLYPALLO, RUOSTUMATON TERÄS, 3L. TIPUTUSMEKANISMILLA","hinta":19.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-118-ad062aed.jpg","source":"nikkarien","cart_key":"N:843","nimi_en":"SAUNIA SAUNA BALL, STAINLESS STEEL, 3L. WITH DRIPPING MECHANISM","nimi_fi":"SAUNIA LÖYLYPALLO, RUOSTUMATON TERÄS, 3L. TIPUTUSMEKANISMILLA"},{"nro":"843C","nimi":"SAUNIA LÖYLYPALLO, KUPAROITU, RUOSTUMATON TERÄS, 3L. TIPUTUSMEKANISMILLA","hinta":19.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-119-99e0c82d.png","source":"nikkarien","cart_key":"N:843C","nimi_en":"SAUNIA SAUNA BALL, COPPER PLATED STAINLESS STEEL, 3L. WITH DRIPPING MECHANISM","nimi_fi":"SAUNIA LÖYLYPALLO, KUPAROITU, RUOSTUMATON TERÄS, 3L. TIPUTUSMEKANISMILLA"},{"nro":"843M","nimi":"SAUNIA LÖYLYPALLO, MUSTA, RUOSTUMATON TERÄS, 3L. TIPUTUSMEKANISMILLA","hinta":19.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-120-4d09475b.jpg","source":"nikkarien","cart_key":"N:843M","nimi_en":"SAUNIA SAUNA BALL, BLACK STAINLESS STEEL, 3L. WITH DRIPPING MECHANISM","nimi_fi":"SAUNIA LÖYLYPALLO, MUSTA, RUOSTUMATON TERÄS, 3L. TIPUTUSMEKANISMILLA"},{"nro":"844","nimi":"SAUNIA SUOLAMALJA SAUNAAN VUOLUKIVI, SIS . KETJUN, KOUKUN JA HIMALAJAN SUOLAPALAN (n. 50 G)","hinta":16.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-121-b2c730f0.jpg","source":"nikkarien","cart_key":"N:844","nimi_en":"SAUNIA AROMA & SALT BOWL FOR SAUNA WITH METAL CHAIN, HOOK  AND SALT CRYSTALS","nimi_fi":"SAUNIA SUOLAMALJA SAUNAAN VUOLUKIVI, SIS . KETJUN, KOUKUN JA HIMALAJAN SUOLAPALAN (n. 50 G)"},{"nro":"846","nimi":"SAUNIA HIMALAJAN SUOLAKIVET N. 200 G","hinta":4.25,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Muu","kuva":"images/img-122-1cc880ee.jpg","source":"nikkarien","cart_key":"N:846","nimi_en":"SAUNIA HIMALAYAN SALT CRYSTALS ~ 200 GRAMMS","nimi_fi":"SAUNIA HIMALAJAN SUOLAKIVET N. 200 G"},{"nro":"848","nimi":"SAUNIA AROMIMALJA TIPUSTUSMEKANISMILLA, 300 ML SIS. KETJUN,  RUOSTUMATON TERÄS","hinta":19.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-123-2386fa38.jpg","source":"nikkarien","cart_key":"N:848","nimi_en":"SAUNIA AROMA BOWL 300 ML  INC. 100 CM WITH CHAIN, STAINLESS STEEL","nimi_fi":"SAUNIA AROMIMALJA TIPUSTUSMEKANISMILLA, 300 ML SIS. KETJUN,  RUOSTUMATON TERÄS"},{"nro":"851","nimi":"SAUNIA VESIKAUHA 1,5 L, RUOSTUMATON TERÄS","hinta":10.1,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kauha","kuva":"images/img-124-769acf2b.jpg","source":"nikkarien","cart_key":"N:851","nimi_en":"SAUNIA WATER LADLE 1,5L STAINLESS STEEL","nimi_fi":"SAUNIA VESIKAUHA 1,5 L, RUOSTUMATON TERÄS"},{"nro":"852","nimi":"SAUNIA PESUVATI 7 L, RUOSTUMATON TERÄS","hinta":16.0,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-125-217958ce.jpg","source":"nikkarien","cart_key":"N:852","nimi_en":"SAUNA WASHBASIN 7L STAINLESS STEEL","nimi_fi":"SAUNIA PESUVATI 7 L, RUOSTUMATON TERÄS"},{"nro":"853","nimi":"SAUNIA LÖYLYKAUHA 50 CM, KOIVU,  LAKATTU PESÄ","hinta":9.2,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Kauha","kuva":"images/img-126-383e6777.jpg","source":"nikkarien","cart_key":"N:853","nimi_en":"SAUNIA SAUNA LADLE 50 CM, BIRCH WOOD","nimi_fi":"SAUNIA LÖYLYKAUHA 50 CM, KOIVU,  LAKATTU PESÄ"},{"nro":"853P","nimi":"SAUNIA LÖYLYKAUHA 40 CM, KOIVU,  LAKATTU PESÄ","hinta":8.1,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Kauha","kuva":"images/img-127-1523823a.jpg","source":"nikkarien","cart_key":"N:853P","nimi_en":"SAUNIA SAUNA LADLE,  40 CM BIRCH WOOD","nimi_fi":"SAUNIA LÖYLYKAUHA 40 CM, KOIVU,  LAKATTU PESÄ"},{"nro":"856","nimi":"SAUNIA LÖYLYKAUHA 45 CM, RUOSTUMATON TERÄS, TEAK VÄRISELLÄ KAHVALLA","hinta":8.8,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kauha","kuva":"images/img-128-3cb75914.jpg","source":"nikkarien","cart_key":"N:856","nimi_en":"SAUNIA SAUNA LADLE STAINLESS STEEL WITH TEAK WOOD HANDLE","nimi_fi":"SAUNIA LÖYLYKAUHA 45 CM, RUOSTUMATON TERÄS, TEAK VÄRISELLÄ KAHVALLA"},{"nro":"861","nimi":"SAUNIA SAUNAN SUIHKULÄHDE 0,6L. RUOSTUMATON TERÄS / KIVI","hinta":19.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-129-23cbce06.jpg","source":"nikkarien","cart_key":"N:861","nimi_en":"SAUNIA SAUNA HUMIDIFIER 0,6L. STONE / STAINLESS STEEL","nimi_fi":"SAUNIA SAUNAN SUIHKULÄHDE 0,6L. RUOSTUMATON TERÄS / KIVI"},{"nro":"893","nimi":"SAUNIA TEAK VÄRINEN SAUNAKIULU 4 LTR, RST SISÄ-ASTIALLA","hinta":21.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-130-2f4b31f9.jpg","source":"nikkarien","cart_key":"N:893","nimi_en":"SAUNIA SAUNABOWL 4 L TEAK COLOR WITH STAINLESS STEEL INSIDE","nimi_fi":"SAUNIA TEAK VÄRINEN SAUNAKIULU 4 LTR, RST SISÄ-ASTIALLA"},{"nro":"895","nimi":"SAUNIA PUUKIULU 4L, LAKATTU MÄNTY, MUOVINEN SISÄ-ASTIA","hinta":14.3,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-131-5a4eb1d1.jpg","source":"nikkarien","cart_key":"N:895","nimi_en":"SAUNIA SAUNA BUCKET 4L WITH A PLASTIC INSERT, PINE WOOD, LACQUERED","nimi_fi":"SAUNIA PUUKIULU 4L, LAKATTU MÄNTY, MUOVINEN SISÄ-ASTIA"},{"nro":"895L","nimi":"SAUNIA PUUKIULU 4L, LÄMPÖKÄSITELTY PUU, ÖLJYTTY, MUOVINEN SISÄ-ASTIA","hinta":17.4,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-132-4538bfd7.jpg","source":"nikkarien","cart_key":"N:895L","nimi_en":"SAUNIA SAUNA BUCKET 4L WITH A PLASTIC INSERT, OILED THERMOWOOD","nimi_fi":"SAUNIA PUUKIULU 4L, LÄMPÖKÄSITELTY PUU, ÖLJYTTY, MUOVINEN SISÄ-ASTIA"},{"nro":"897","nimi":"SAUNIA PUUKIULU 7L, LAKATTU MÄNTY,  MUOVINEN SISÄ-ASTIA","hinta":18.5,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-133-88a24fda.jpg","source":"nikkarien","cart_key":"N:897","nimi_en":"SAUNIA SAUNA BUCKET 7L WITH A PLASTIC INSERT PINE WOOD, LACQUERED","nimi_fi":"SAUNIA PUUKIULU 7L, LAKATTU MÄNTY,  MUOVINEN SISÄ-ASTIA"},{"nro":"898","nimi":"SAUNIA SAUNASANKO 6 L, LAKATTU MÄNTY, MUOVINEN SISÄ-ASTIA","hinta":20.5,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-134-bfa1afe0.jpg","source":"nikkarien","cart_key":"N:898","nimi_en":"SAUNIA WOODEN SAUNAPAIL 6 LTR PINE WOOD, LAQUERED","nimi_fi":"SAUNIA SAUNASANKO 6 L, LAKATTU MÄNTY, MUOVINEN SISÄ-ASTIA"},{"nro":"900","nimi":"SAUNIA JUOMATÖLKIN COOLERI, NEOPREENI. 2-VÄRIÄ PAKKAUKSESSA. MUSTA JA VALKOINEN","hinta":2.9,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Muu","kuva":"images/img-135-9336aab7.png","source":"nikkarien","cart_key":"N:900","nimi_en":"SAUNIA CAN COOLER SLEEVE, NEOPREN. 2-COLORS IN PACKAGE. BLACK AND WHITE","nimi_fi":"SAUNIA JUOMATÖLKIN COOLERI, NEOPREENI. 2-VÄRIÄ PAKKAUKSESSA. MUSTA JA VALKOINEN"},{"nro":"911B","nimi":"SAUNIA SAUNAHATTU 100% VILLAA, MUSTA","hinta":7.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-136-3e7b9dce.jpg","source":"nikkarien","cart_key":"N:911B","nimi_en":"SAUNIA SAUNA HAT 100% WOOL, BLACK","nimi_fi":"SAUNIA SAUNAHATTU 100% VILLAA, MUSTA"},{"nro":"911W","nimi":"SAUNIA SAUNAHATTU 100% VILLAA, VALKOINEN","hinta":7.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-137-c26c2654.jpg","source":"nikkarien","cart_key":"N:911W","nimi_en":"SAUNIA SAUNA HAT 100% WOOL, WHITE","nimi_fi":"SAUNIA SAUNAHATTU 100% VILLAA, VALKOINEN"},{"nro":"926M","nimi":"SAUNIA SELÄNPESIN PELLAVAFROTEE, MUSTA","hinta":8.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-138-449a4f04.jpg","source":"nikkarien","cart_key":"N:926M","nimi_en":"SAUNIA BACK WASHER LINEN TERRY, BLACK","nimi_fi":"SAUNIA SELÄNPESIN PELLAVAFROTEE, MUSTA"},{"nro":"928","nimi":"SAUNIA PEHMEÄ SAUNATYYNY, RAIDALLINEN,PÄÄLLINEN: 100% PELLAVAA, VANUTAYTE","hinta":9.2,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-139-d8affd41.jpg","source":"nikkarien","cart_key":"N:928","nimi_en":"SAUNIA SOFT SAUNA PILLOW, CASE: 100% LINEN WITH POLYESTER FILLING","nimi_fi":"SAUNIA PEHMEÄ SAUNATYYNY, RAIDALLINEN,PÄÄLLINEN: 100% PELLAVAA, VANUTAYTE"},{"nro":"928M","nimi":"SAUNIA PEHMEÄ SAUNATYYNY, MUSTA PÄÄLLINEN: 100% PELLAVAA, VANUTÄYTE","hinta":9.2,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-140-bb13d4ce.jpg","source":"nikkarien","cart_key":"N:928M","nimi_en":"SAUNIA SOFT SAUNA PILLOW BLACK, CASE 100% LINEN, POLYESTER FILLING","nimi_fi":"SAUNIA PEHMEÄ SAUNATYYNY, MUSTA PÄÄLLINEN: 100% PELLAVAA, VANUTÄYTE"},{"nro":"940","nimi":"SAUNIA SAUNAHATTU PIIPPAMALLI VALKOINEN PELLAVAFROTEE","hinta":10.2,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-141-e5c7d298.jpg","source":"nikkarien","cart_key":"N:940","nimi_en":"SAUNIA SAUNA HAT WHITE, 60% LINEN, 40% COTTON","nimi_fi":"SAUNIA SAUNAHATTU PIIPPAMALLI VALKOINEN PELLAVAFROTEE"},{"nro":"940C","nimi":"SAUNIA SAUNAHATTU PRESTIGE PIIPPAMALLI PELLAVAFROTEE","hinta":10.2,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-142-9b4ab82e.jpg","source":"nikkarien","cart_key":"N:940C","nimi_en":"SAUNIA SAUNA HAT GRAY, 60% LINEN, 40% COTTON","nimi_fi":"SAUNIA SAUNAHATTU PRESTIGE PIIPPAMALLI PELLAVAFROTEE"},{"nro":"941B","nimi":"SAUNIA SAUNAHATTU PIIPPAMALLI MUSTA PELLAVAFROTEE","hinta":10.2,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-143-dc8bb8a5.jpg","source":"nikkarien","cart_key":"N:941B","nimi_en":"SAUNIA SAUNA HAT BLACK, 60% LINEN, 40% COTTON","nimi_fi":"SAUNIA SAUNAHATTU PIIPPAMALLI MUSTA PELLAVAFROTEE"},{"nro":"942M","nimi":"SAUNIA PESUKINNAS PELLAVAFROTEE, MUSTA","hinta":6.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-144-e1516d1e.jpg","source":"nikkarien","cart_key":"N:942M","nimi_en":"SAUNIA WASHING CLOVE, BLACK","nimi_fi":"SAUNIA PESUKINNAS PELLAVAFROTEE, MUSTA"},{"nro":"944","nimi":"SAUNIA PESUSIENI PYÖREÄ, MUSTA","hinta":5.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-145-de7748e0.jpg","source":"nikkarien","cart_key":"N:944","nimi_en":"SAUNIA SOFT EXFOLIATING SPONGE, BLACK","nimi_fi":"SAUNIA PESUSIENI PYÖREÄ, MUSTA"},{"nro":"945","nimi":"SAUNIA PESUSIENI PEHMEÄ, MUSTA","hinta":4.5,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-146-3ddadf02.jpg","source":"nikkarien","cart_key":"N:945","nimi_en":"SAUNIA SPONGE SOFT, BLACK","nimi_fi":"SAUNIA PESUSIENI PEHMEÄ, MUSTA"},{"nro":"946","nimi":"SAUNIA KYLPYPYYHE PELLAVAFROTEE 70x150CM MUSTA","hinta":19.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-147-bb03082a.jpg","source":"nikkarien","cart_key":"N:946","nimi_en":"SAUNIA BATH TOWEL 70X150CM LINEN TERRY, BLACK","nimi_fi":"SAUNIA KYLPYPYYHE PELLAVAFROTEE 70x150CM MUSTA"},{"nro":"947","nimi":"SAUNIA KASVOPYYHE PELLAVAFROTEE 50x70CM MUSTA","hinta":7.9,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Tekstiili","kuva":"images/img-148-b58b9a57.jpg","source":"nikkarien","cart_key":"N:947","nimi_en":"SAUNIA FACE TOWEL 50X70 CM LINEN TERRY, BLACK","nimi_fi":"SAUNIA KASVOPYYHE PELLAVAFROTEE 50x70CM MUSTA"},{"nro":"32109","nimi":"A-IRON MAKKARATIKKU MUSTA, TAKORAUTA","hinta":8.75,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-149-f6c53098.jpg","source":"nikkarien","cart_key":"N:32109","nimi_en":"A-IRON BLACK SKEWER LENGTH 69 CM, WROUGHT IRON","nimi_fi":"A-IRON MAKKARATIKKU MUSTA, TAKORAUTA"},{"nro":"32113","nimi":"A-IRON TAKKAHARJA MUSTA, TAKORAUTA","hinta":10.15,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-150-95bb179b.jpg","source":"nikkarien","cart_key":"N:32113","nimi_en":"A-IRON BLACK FIREPLACE BRUSH LENGTH 69 CM, WROUGHT IRON","nimi_fi":"A-IRON TAKKAHARJA MUSTA, TAKORAUTA"},{"nro":"32114","nimi":"A-IRON TAKKAPUUTELINEBASIC MUSTA, TERÄS/TAKORAUTA","hinta":18.75,"hinta_norm":null,"moq":1,"saldo":null,"ryhma":"Takka","kuva":"images/img-151-b41306dd.jpg","source":"nikkarien","cart_key":"N:32114","nimi_en":"A-IRON LOGS HOLDER BLACK PAINTED IRON","nimi_fi":"A-IRON TAKKAPUUTELINEBASIC MUSTA, TERÄS/TAKORAUTA"},{"nro":"32119","nimi":"A-IRON TUHKALAPIO MUSTA, TAKORAUTA","hinta":10.15,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-152-1b91d2ac.jpg","source":"nikkarien","cart_key":"N:32119","nimi_en":"A-IRON BLACK FIREPLACE SHOVEL LENGTH 69 CM, WROUGHT IRON","nimi_fi":"A-IRON TUHKALAPIO MUSTA, TAKORAUTA"},{"nro":"32125","nimi":"A-IRON HIILIHANKO MUSTA, TAKORAUTA","hinta":10.15,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-153-0dc29cbf.jpg","source":"nikkarien","cart_key":"N:32125","nimi_en":"A-IRON BLACK COLE POKER LENGTH 69 CM, WROUGHT IRON","nimi_fi":"A-IRON HIILIHANKO MUSTA, TAKORAUTA"},{"nro":"32131","nimi":"A-IRON HIILIKOLA MUSTA, TAKORAUTA","hinta":10.15,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-154-2dd6dfa4.jpg","source":"nikkarien","cart_key":"N:32131","nimi_en":"A-IRON BLACK COLE PLATE LENGTH 69 CM, WROUGHT IRON","nimi_fi":"A-IRON HIILIKOLA MUSTA, TAKORAUTA"},{"nro":"32137","nimi":"A-IRON TAKKASETTI 4-VÄLINEELLÄ, MUSTAT PUUKAHVAT,  MUSTA, TAKORAUTA","hinta":39.5,"hinta_norm":null,"moq":1,"saldo":null,"ryhma":"Takka","kuva":"images/img-155-cb59c441.jpg","source":"nikkarien","cart_key":"N:32137","nimi_en":"A-IRON BLACK FIREPLACE TOOL SET WITH 4 TOOLS, BLACK HANDLES, WROUGHT IRON","nimi_fi":"A-IRON TAKKASETTI 4-VÄLINEELLÄ, MUSTAT PUUKAHVAT,  MUSTA, TAKORAUTA"},{"nro":"32143","nimi":"A-IRON TAKKASETTI BASIC  3-VÄLINEELLÄ,  MUSTA, TAKORAUTA","hinta":24.75,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-156-0ae9b1d9.jpg","source":"nikkarien","cart_key":"N:32143","nimi_en":"A-IRON BLACK FIREPLACE TOOL SET BASIC WITH 3 TOOLS, WROUGHT IRON","nimi_fi":"A-IRON TAKKASETTI BASIC  3-VÄLINEELLÄ,  MUSTA, TAKORAUTA"},{"nro":"32162","nimi":"A-IRON TAKANEDUSPELTI 40 X 60 CM MUSTA, TERÄS/TAKORAUTA","hinta":17.45,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-157-4aaf1908.jpg","source":"nikkarien","cart_key":"N:32162","nimi_en":"A-IRON BLACK FIREPLACE FLOOR PLATE 40 Х 60 CM, WROUGHT IRON","nimi_fi":"A-IRON TAKANEDUSPELTI 40 X 60 CM MUSTA, TERÄS/TAKORAUTA"},{"nro":"32163","nimi":"A-IRON TAKANEDUSPELTI 40 X 70 CM MUSTA, TERÄS/TAKORAUTA","hinta":19.85,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-158-321da7ff.jpg","source":"nikkarien","cart_key":"N:32163","nimi_en":"A-IRON BLACK FIREPLACE FLOOR PLATE 40 Х 70 CM, WROUGHT IRON","nimi_fi":"A-IRON TAKANEDUSPELTI 40 X 70 CM MUSTA, TERÄS/TAKORAUTA"},{"nro":"32164","nimi":"A-IRON TAKANEDUSPELTI 40 X 100 CM MUSTA, TERÄS/TAKORAUTA","hinta":24.75,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Takka","kuva":"images/img-159-29787f36.jpg","source":"nikkarien","cart_key":"N:32164","nimi_en":"A-IRON BLACK FIREPLACE FLOOR PLATE 40 Х 100 CM, WROUGHT IRON","nimi_fi":"A-IRON TAKANEDUSPELTI 40 X 100 CM MUSTA, TERÄS/TAKORAUTA"},{"nro":"46351","nimi":"SAUNIA SAUNAVALAISIN PYÖREÄ, 230V IP54, E27","hinta":8.2,"hinta_norm":null,"moq":5,"saldo":null,"ryhma":"Muu","kuva":"images/img-160-f2909e67.jpg","source":"nikkarien","cart_key":"N:46351","nimi_en":"SAUNIA ROUND SAUNA LIGHT 230V, T125, IP54, STEEL/ GLASS","nimi_fi":"SAUNIA SAUNAVALAISIN PYÖREÄ, 230V IP54, E27"},{"nro":"46353","nimi":"SAUNIA SAUNAVALAISIN VARJOSTIMELLA, TERVALEPPÄ VARJOSTIN, PINTA-ASENNETTAVA, CE, 230V, T125, IP54","hinta":30.8,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Muu","kuva":"images/img-161-92e59331.jpg","source":"nikkarien","cart_key":"N:46353","nimi_en":"SAUNIA SAUNALIGHT WITH DARK ALDER SHADE CE, 230V, T125, IP54","nimi_fi":"SAUNIA SAUNAVALAISIN VARJOSTIMELLA, TERVALEPPÄ VARJOSTIN, PINTA-ASENNETTAVA, CE, 230V, T125, IP54"},{"nro":"46354","nimi":"SAUNIA SAUNAVALAISIN VARJOSTIMELLA, TERVALEPPÄ VARJOSTIN, PINTA-ASENNETTAVA, CE, 230V, T125, IP54","hinta":30.8,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Muu","kuva":"images/img-162-7206e45c.jpg","source":"nikkarien","cart_key":"N:46354","nimi_en":"SAUNIA SAUNALIGHT WITH DARK ALDER SHADE CE, 230V, T125, IP54","nimi_fi":"SAUNIA SAUNAVALAISIN VARJOSTIMELLA, TERVALEPPÄ VARJOSTIN, PINTA-ASENNETTAVA, CE, 230V, T125, IP54"},{"nro":"46355","nimi":"SAUNIA SAUNAVALAISIN VARJOSTIMELLA, HAAPA VARJOSTIN, PINTA-ASENNETTAVA,CE, 230V, T125, IP54","hinta":30.8,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Muu","kuva":"images/img-163-0a172a3d.jpg","source":"nikkarien","cart_key":"N:46355","nimi_en":"SAUNIA SAUNALIGHT WITH ASPEN SHADE CE, 230V, T125, IP54","nimi_fi":"SAUNIA SAUNAVALAISIN VARJOSTIMELLA, HAAPA VARJOSTIN, PINTA-ASENNETTAVA,CE, 230V, T125, IP54"},{"nro":"378","nimi":"SAUNIA PATA SAUNASANKO VIILEÄ HOPEA","hinta":7.5,"hinta_norm":20.5,"moq":16,"saldo":211,"ryhma":"Erikoiserä","kuva":"images/img-164-ffbbddf7.jpg","source":"erikois","cart_key":"E:378"},{"nro":"379","nimi":"SAUNIA PATA LÖYLYKAUHA VIILEÄ HOPEA","hinta":3.5,"hinta_norm":8.6,"moq":16,"saldo":125,"ryhma":"Erikoiserä","kuva":"images/img-165-104c485f.jpg","source":"erikois","cart_key":"E:379"},{"nro":"178","nimi":"SAUNIA SAUNASANKO KULTAHIEKKA ALUMIINI 6 LTR / Saunapail aluminium, sand color","hinta":7.5,"hinta_norm":19.9,"moq":16,"saldo":818,"ryhma":"Erikoiserä","kuva":"images/img-166-7dc9b582.jpg","source":"erikois","cart_key":"E:178"},{"nro":"179","nimi":"SAUNIA LÖYLYKAUHA KULTAHIEKKA, ALUMIINI 47 CM / Saunaladle aluminium sand color","hinta":3.5,"hinta_norm":8.3,"moq":16,"saldo":1470,"ryhma":"Erikoiserä","kuva":"images/img-167-04adde3b.jpg","source":"erikois","cart_key":"E:179"},{"nro":"439H","nimi":"SAUNIA PEFLETTI 30 x 44 CM, ANTRASIITTI / Linen-cotton seat cover","hinta":2.0,"hinta_norm":5.25,"moq":6,"saldo":198,"ryhma":"Erikoiserä","kuva":"images/img-168-6d4a9131.jpg","source":"erikois","cart_key":"E:439H"},{"nro":"57820","nimi":"SAUNIA KUPARIKIULU 1 LTR / Copper bowl","hinta":4.9,"hinta_norm":11.7,"moq":6,"saldo":402,"ryhma":"Erikoiserä","kuva":"images/img-169-44f5c4bf.jpg","source":"erikois","cart_key":"E:57820"},{"nro":"655","nimi":"SAUNIA PALLOKAUHA RST","hinta":4.5,"hinta_norm":9.9,"moq":6,"saldo":20,"ryhma":"Erikoiserä","kuva":"images/img-170-d642ff6b.jpg","source":"erikois","cart_key":"E:655"},{"nro":"10754","nimi":"SAUNIA LÖYLYKAUHA VALKOINEN RST 45 CM / Saunaladle stainless steel","hinta":2.9,"hinta_norm":5.2,"moq":4,"saldo":92,"ryhma":"Erikoiserä","kuva":"images/img-171-7c384f0d.jpg","source":"erikois","cart_key":"E:10754"},{"nro":"10792","nimi":"SAUNIA SAUNAKIULU VALKOINEN RST 4 LTR / Saunabowl stainless steel","hinta":5.9,"hinta_norm":11.25,"moq":4,"saldo":355,"ryhma":"Erikoiserä","kuva":"images/img-172-13b333aa.jpg","source":"erikois","cart_key":"E:10792"},{"nro":"546","nimi":"Saunan kosteusmittari / Sauna hygrometer, pine frame","hinta":3.0,"hinta_norm":9.9,"moq":5,"saldo":265,"ryhma":"Erikoiserä","kuva":"images/img-173-345fe607.jpg","source":"erikois","cart_key":"E:546"},{"nro":"511L","nimi":"Saunan kosteusmittari / Sauna hygrometer, thermowood frame","hinta":3.0,"hinta_norm":12.1,"moq":5,"saldo":5,"ryhma":"Erikoiserä","kuva":"images/img-174-e0da29fd.gif","source":"erikois","cart_key":"E:511L"},{"nro":"514L","nimi":"Saunan hiuskosteusmittari / Sauna hygrometer, thermo and birch frame","hinta":3.0,"hinta_norm":17.7,"moq":5,"saldo":20,"ryhma":"Erikoiserä","kuva":"images/img-175-ff0067c3.gif","source":"erikois","cart_key":"E:514L"},{"nro":"419","nimi":"Saunan lämpömittari / Sauna thermometer","hinta":4.9,"hinta_norm":9.7,"moq":10,"saldo":130,"ryhma":"Erikoiserä","kuva":"images/img-176-44ce5913.jpg","source":"erikois","cart_key":"E:419"},{"nro":"792","nimi":"Valkoinen saunakiulu rst 4,5 ltr / Saunabowl stainless steel","hinta":4.9,"hinta_norm":13.9,"moq":4,"saldo":390,"ryhma":"Erikoiserä","kuva":"images/img-177-f463b27e.png","source":"erikois","cart_key":"E:792"},{"nro":"853V","nimi":"Valkoinen puulöylykauha 50 cm / Saunaladle, wooden","hinta":2.0,"hinta_norm":7.9,"moq":5,"saldo":85,"ryhma":"Erikoiserä","kuva":"images/img-178-10fa6b8b.jpg","source":"erikois","cart_key":"E:853V"},{"nro":"853M","nimi":"SAUNIA MUSTA LÖYLYKAUHA 40CM, KOIVUA / Black wooden ladle 40cm","hinta":3.9,"hinta_norm":8.9,"moq":5,"saldo":10,"ryhma":"Erikoiserä","kuva":"images/img-179-8a4be1b2.jpg","source":"erikois","cart_key":"E:853M"},{"nro":"895M","nimi":"SAUNIA MUSTA PUUKIULU 4LTR MUOVISISUSTALLA / Black wooden bowl, 4ltr","hinta":7.9,"hinta_norm":15.9,"moq":4,"saldo":83,"ryhma":"Erikoiserä","kuva":"images/img-180-060826ec.jpg","source":"erikois","cart_key":"E:895M"},{"nro":"469","nimi":"SAUNIA SAUNAHARJA 29 CM, KOIVU","hinta":2.9,"hinta_norm":5.1,"moq":10,"saldo":1460,"ryhma":"Erikoiserä","kuva":"images/img-181-a540ff66.jpg","source":"erikois","cart_key":"E:469"},{"nro":"520","nimi":"SAUNIA SAUNAN OVENVEDIN HAAPA","hinta":2.0,"hinta_norm":3.9,"moq":10,"saldo":100,"ryhma":"Erikoiserä","kuva":"images/img-182-a4d03f5a.jpg","source":"erikois","cart_key":"E:520"},{"nro":"726","nimi":"SAUNIA WC-OVIKYLTTI, OXIDOITU KUPARI","hinta":2.0,"hinta_norm":5.9,"moq":10,"saldo":70,"ryhma":"Erikoiserä","kuva":"images/img-183-43d772ff.jpg","source":"erikois","cart_key":"E:726"},{"nro":"429TL","nimi":"SAUNIA LAUDETYYNY 28 X 33,5 CM TERVALEPPÄ","hinta":12.3,"hinta_norm":null,"moq":6,"saldo":null,"ryhma":"Muu","kuva":"images/img-184-8e9c84d2.jpg"},{"nro":"711L","nimi":"SAUNIA SAUNAN LAMPUNVARJOSTIN 32 X 30 X 12,5 CM, PINTA-ASENNUS, LÄMPÖKÄSITELTY PUU","hinta":21.5,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Muu","kuva":"images/img-185-96a64299.jpg"},{"nro":"715H","nimi":"SAUNIA SAUNAN IV-RITILÄ LIUKUOVELLA 30 X 13 X 3 CM, HAAPA","hinta":11.8,"hinta_norm":null,"moq":10,"saldo":null,"ryhma":"Muu","kuva":"images/img-186-0b3f54fd.jpg"},{"nro":"815","nimi":"KÄSINTEHTY LAVENTELISAIPPUA 100G","hinta":4.9,"hinta_norm":null,"moq":12,"saldo":null,"ryhma":"Muu","kuva":"images/img-187-09d053c7.jpg"},{"nro":"845ST","nimi":"SAUNIA RIPUSTUSTELINE AROMIMALJOILLE. KÄÄNTYY SIVULLE. PITUUS 32,5 CM","hinta":11.9,"hinta_norm":null,"moq":4,"saldo":null,"ryhma":"Muu","kuva":"images/img-188-6db56fda.jpg"},{"nro":"868","nimi":"SAUNIA LAUTEISIIN UPOTETTAVA KIULU 9L, RUOSTUMATON TERÄS","hinta":24.9,"hinta_norm":null,"moq":3,"saldo":null,"ryhma":"Kiulu","kuva":"images/img-189-5cc45ed0.jpg"}];
+const VAT=0.255;
+
+const tagClass={
+  'Kauha':'tag-kauha','Kiulu':'tag-kiulu','Setti':'tag-setti','Mittari':'tag-mittari',
+  'Tuoksu':'tag-tuoksu','Muu':'tag-muu','Tekstiili':'tag-tekstiili','Harja':'tag-harja',
+  'Takka':'tag-takka','Erikoiserä':'tag-erikoiserä'
+};
+const allGroups=['Kauha','Kiulu','Setti','Mittari','Tuoksu','Tekstiili','Harja','Takka','Muu','Erikoiserä'];
+
+let activeGroup=null, searchQ='';
+let cart={};  // cart_key -> qty
+
+// ── Chips ──
+const chipsEl=document.getElementById('chips');
+function addChip(label,g,isErikois){
+  const c=document.createElement('div');
+  c.className='chip'+(g===null?' active':'')+(isErikois?' erikois-chip':'');
+  c.textContent=label;
+  c.onclick=()=>{activeGroup=g;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');render();};
+  chipsEl.appendChild(c);
+}
+addChip('Kaikki ('+P.length+')',null,false);
+allGroups.forEach(g=>{
+  const n=P.filter(p=>p.ryhma===g).length;
+  if(!n)return;
+  addChip(g+' ('+n+')',g,g==='Erikoiserä');
+});
+
+// ── Helpers ──
+function fmt(n,d=2){if(n==null)return'—';return n.toLocaleString('fi-FI',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function filtered(){
+  return P.filter(p=>{
+    const gm=!activeGroup||p.ryhma===activeGroup;
+    const q=searchQ.toLowerCase();
+    const sm=!q||String(p.nro).toLowerCase().includes(q)||p.nimi.toLowerCase().includes(q);
+    return gm&&sm;
+  });
+}
+function cartCount(){return Object.values(cart).filter(v=>v>0).length;}
+function cartItems(){return P.filter(p=>cart[p.cart_key]>0);}
+function cartTotal(items){return (items||cartItems()).reduce((a,p)=>a+p.hinta*(cart[p.cart_key]||0),0);}
+
+// ── Render grid ──
+function render(){
+  const list=filtered();
+  const g=document.getElementById('grid');
+  const s=document.getElementById('statsBar');
+  if(!list.length){g.innerHTML='<div class="no-results">'+t().noResults+'</div>';s.textContent='';return;}
+  s.textContent=t().stats(list.length);
+  g.innerHTML=list.map(p=>{
+    const gi=P.indexOf(p);
+    const isE=p.source==='erikois';
+    const inCart=cart[p.cart_key]>0;
+    const img=p.kuva?`<img class="card-img" src="${p.kuva}" alt="" loading="lazy">`:'<div class="card-no-img">📦</div>';
+    const pn=pName(p);
+    const tc=tagClass[p.ryhma]||'tag-muu';
+    const badge=inCart?`<div class="in-cart-badge">${cart[p.cart_key]}</div>`:'';
+    const ribbon=isE?'<div class="erikois-ribbon">⚡ ERIKOISERÄ</div>':'';
+    const normLine=isE&&p.hinta_norm?`<div class="price-norm">${fmt(p.hinta_norm)} €</div>`:'';
+    const savPct=isE&&p.hinta_norm?Math.round((1-p.hinta/p.hinta_norm)*100):0;
+    const savBadge=savPct>0?`<span class="savings-pct">${t().salePct(savPct)}</span>`:'';
+    const saldoLine=isE&&p.saldo!=null?`<div class="saldo-badge">${t().saldoLbl(p.saldo)}</div>`:'';
+    return`<div class="card${inCart?' in-cart':''}${isE?' erikois-card':''}" onclick="openModal(${gi})">
+      ${ribbon}${badge}${img}
+      <div class="card-body">
+        <div class="card-nro">${p.nro}</div>
+        <div class="card-name">${pn}</div>
+        <span class="card-tag ${tc}">${p.ryhma}</span>
+        <div class="card-footer">
+          <div>
+            ${normLine}
+            <div class="price">${fmt(p.hinta)} €${savBadge}</div>
+            <div class="moq">MOQ ${p.moq} kpl</div>
+            ${saldoLine}
+          </div>
+          <button class="add-btn" onclick="quickAdd(event,'${p.cart_key}','${p.nro}')">
+            ${inCart?t().inCartBtn(cart[p.cart_key]):t().addBtn}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Quick add ──
+function quickAdd(e,ck,nro){
+  e.stopPropagation();
+  const p=P.find(x=>x.cart_key===ck);
+  if(!p)return;
+  cart[ck]=(cart[ck]||0)+p.moq;
+  updateCartBar();render();
+}
+
+// ── Cart bar ──
+function updateCartBar(){
+  const n=cartCount();
+  const bar=document.getElementById('cartBar');
+  if(!n){bar.classList.add('hidden');return;}
+  bar.classList.remove('hidden');
+  document.getElementById('cartBarLabel').textContent=t().cartBarLabel(n);
+  document.getElementById('cartBarSub').textContent=t().cartBarSub(cartTotal());
+}
+
+// ── Product modal ──
+function openModal(gi){
+  const p=P[gi];if(!p)return;
+  const isE=p.source==='erikois';
+  const pn=pName(p);
+  const inCart=cart[p.cart_key]>0;
+  const modal=document.getElementById('productModal');
+  modal.className='modal'+(isE?' erikois-modal':'');
+  document.getElementById('mImg').innerHTML=p.kuva
+    ?`<div class="modal-img-wrap"><img class="modal-img" src="${p.kuva}" alt=""></div>`:'';
+  const tc=tagClass[p.ryhma]||'tag-muu';
+  const tr=t();
+  const savPct=isE&&p.hinta_norm?Math.round((1-p.hinta/p.hinta_norm)*100):0;
+  const accentClass=isE?'erikois-accent':'accent';
+  document.getElementById('mBody').innerHTML=`
+    <div class="modal-nro">Tuotenro ${p.nro}${isE?' · ⚡ '+(LANG==='fi'?'Erikoiserä':'Special Offer'):''}</div>
+    <div class="modal-name">${pn}</div>
+    <span class="card-tag ${tc}" style="margin-bottom:12px;display:inline-block">${p.ryhma}</span>
+    ${isE&&p.hinta_norm?`<div class="drow"><span class="dlbl">${tr.modalNormLbl}</span><span class="dval" style="text-decoration:line-through;color:var(--muted)">${fmt(p.hinta_norm)} €</span></div>`:''}
+    <div class="drow"><span class="dlbl">${tr.modalPriceLbl}</span><span class="dval ${accentClass}">${fmt(p.hinta)} €${savPct?` <span class="savings-pct">-${savPct}%</span>`:''}</span></div>
+    <div class="drow"><span class="dlbl">${tr.modalVatLbl}</span><span class="dval">${fmt(p.hinta*(1+VAT))} €</span></div>
+    <div class="drow"><span class="dlbl">${tr.modalMoqLbl}</span><span class="dval" style="color:#16a34a">${p.moq} kpl</span></div>
+    ${isE&&p.saldo!=null?`<div class="drow"><span class="dlbl">${tr.modalSaldoLbl}</span><span class="dval" style="color:#16a34a">${p.saldo} kpl</span></div>`:''}
+    <div class="modal-add-section">
+      <div class="qty-row">
+        <span class="qty-label">${tr.qtyLbl}</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="modalAdj(-1,'${p.cart_key}',${p.moq})">−</button>
+          <input class="qty-val" id="modalQty" type="number" value="${inCart?cart[p.cart_key]:p.moq}" min="${p.moq}" step="${p.moq}">
+          <button class="qty-btn" onclick="modalAdj(1,'${p.cart_key}',${p.moq})">+</button>
+        </div>
+      </div>
+      <button class="modal-add-btn${isE?' erikois':''}${inCart?' remove':''}" onclick="modalToggle('${p.cart_key}',${p.moq})">
+        ${inCart?tr.modalRemoveBtn:tr.modalAddBtn}
+      </button>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function modalAdj(dir,ck,moq){
+  const el=document.getElementById('modalQty');
+  let v=parseInt(el.value)||moq;
+  v=Math.max(moq,v+dir*moq);
+  el.value=v;
+  if(cart[ck]>0){cart[ck]=v;updateCartBar();render();}
+}
+function modalToggle(ck,moq){
+  if(cart[ck]>0){delete cart[ck];}
+  else{const qty=parseInt(document.getElementById('modalQty').value)||moq;cart[ck]=Math.max(moq,qty);}
+  updateCartBar();render();closeModalDirect();
+}
+function closeModal(e){if(e.target===document.getElementById('overlay'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+
+// ── Search ──
+function clearSearch(){document.getElementById('searchInput').value='';searchQ='';document.getElementById('clearBtn').classList.remove('show');render();}
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input',function(){
+  searchQ=this.value.trim();
+  document.getElementById('clearBtn').classList.toggle('show',!!searchQ);
+  clearTimeout(searchTimer);searchTimer=setTimeout(render,150);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalDirect();closeCart();}});
+
+// ── Cart modal ──
+function openCart(){renderCart();document.getElementById('cartOverlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeCart(){document.getElementById('cartOverlay').classList.remove('open');document.body.style.overflow='';}
+
+function renderCart(){
+  const all=cartItems();
+  const nk=all.filter(p=>p.source==='nikkarien');
+  const ek=all.filter(p=>p.source==='erikois');
+  const listEl=document.getElementById('cartList');
+  
+  if(!all.length){listEl.innerHTML='<div class="cart-empty">🛒 Kori on tyhjä</div>';document.getElementById('cartTotals').innerHTML='';return;}
+  
+  function itemHtml(p){
+    const qty=cart[p.cart_key];
+    const rowTot=p.hinta*qty;
+    const isE=p.source==='erikois';
+    const img=p.kuva?`<img class="cart-item-img${isE?' cart-item-erikois':''}" src="${p.kuva}" alt="">`:'<div class="cart-item-no-img">📦</div>';
+    return`<div class="cart-item">
+      ${img}
+      <div class="cart-item-info">
+        <div class="cart-item-nro${isE?' erikois':''}">${p.nro}${isE?' ⚡':''}</div>
+        <div class="cart-item-name">${pName(p)}</div>
+        <div class="cart-item-meta">MOQ ${p.moq} kpl · ${fmt(p.hinta)} €/kpl</div>
+      </div>
+      <div class="cart-item-right">
+        <div class="cart-item-price">${fmt(rowTot)} €</div>
+        <div class="cart-item-ctrl">
+          <button class="cart-item-btn" onclick="cartAdj('${p.cart_key}',${p.moq},-1)">−</button>
+          <input class="cart-item-qty" type="number" value="${qty}" min="${p.moq}" step="${p.moq}"
+            onchange="cartSetQty('${p.cart_key}',${p.moq},this.value)">
+          <button class="cart-item-btn" onclick="cartAdj('${p.cart_key}',${p.moq},1)">+</button>
+        </div>
+        <button class="cart-item-del" onclick="cartRemove('${p.cart_key}')">🗑</button>
+      </div>
+    </div>`;
+  }
+  
+  let html='';
+  if(nk.length){html+='<div class="cart-section-title">'+t().cartSecNk+'</div>'+nk.map(itemHtml).join('');}
+  if(ek.length){html+='<div class="cart-section-title">'+t().cartSecEk+'</div>'+ek.map(itemHtml).join('');}
+  listEl.innerHTML=html;
+  
+  const nkTotal=cartTotal(nk);
+  const ekTotal=cartTotal(ek);
+  const sub=nkTotal+ekTotal;
+  const vat=sub*VAT;
+  const tot=sub+vat;
+  
+  let totHtml='';
+  if(nk.length&&ek.length){
+    totHtml+=`<div class="total-row section"><span>${t().totalNk}</span><span>${fmt(nkTotal)} €</span></div>`;
+    totHtml+=`<div class="total-row section"><span>${t().totalEk}</span><span>${fmt(ekTotal)} €</span></div>`;
+  }
+  totHtml+=`<div class="total-row"><span>${t().totalSub}</span><span>${fmt(sub)} €</span></div>`;
+  totHtml+=`<div class="total-row"><span>${t().totalVat}</span><span>${fmt(vat)} €</span></div>`;
+  totHtml+=`<div class="total-row big"><span>${t().totalGrand}</span><span>${fmt(tot)} €</span></div>`;
+  document.getElementById('cartTotals').innerHTML=totHtml;
+}
+function cartAdj(ck,moq,dir){cart[ck]=Math.max(moq,(cart[ck]||moq)+dir*moq);updateCartBar();renderCart();render();}
+function cartSetQty(ck,moq,val){let v=Math.max(moq,Math.round((parseInt(val)||moq)/moq)*moq);cart[ck]=v;updateCartBar();renderCart();render();}
+function cartRemove(ck){delete cart[ck];updateCartBar();renderCart();render();}
+
+// ── Print ──
+function printOrder(){
+  const all=cartItems();
+  if(!all.length)return;
+  
+  // Validate customer field
+  const customerInput=document.getElementById('customerName');
+  const customerName=customerInput.value.trim();
+  if(!customerName){
+    const msg=LANG==='fi'
+      ? '👤 Täytä asiakkaan nimi ennen tulostusta!'
+      : '👤 Please enter a customer name before printing!';
+    customerInput.focus();
+    customerInput.style.borderColor='#dc2626';
+    customerInput.style.boxShadow='0 0 0 3px rgba(220,38,38,0.18)';
+    customerInput.placeholder=LANG==='fi'?'⚠️ Pakollinen kenttä!':'⚠️ Required field!';
+    // Shake animation
+    customerInput.animate([
+      {transform:'translateX(0)'},{transform:'translateX(-6px)'},
+      {transform:'translateX(6px)'},{transform:'translateX(-4px)'},
+      {transform:'translateX(4px)'},{transform:'translateX(0)'}
+    ],{duration:320,easing:'ease-in-out'});
+    // Reset styling on input
+    customerInput.addEventListener('input',function resetStyle(){
+      customerInput.style.borderColor='';
+      customerInput.style.boxShadow='';
+      customerInput.placeholder=t().custPh;
+      customerInput.removeEventListener('input',resetStyle);
+    });
+    alert(msg);
+    return;
+  }
+  
+  const nk=all.filter(p=>p.source==='nikkarien');
+  const ek=all.filter(p=>p.source==='erikois');
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('fi-FI',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const tr=t();
+  
+  function tableRows(items,startIdx){
+    return items.map((p,i)=>{
+      const qty=cart[p.cart_key];
+      const rowTot=p.hinta*qty;
+      const isE=p.source==='erikois';
+      const imgCell=p.kuva?`<td class="pd-img-cell"><img class="pd-img" src="${p.kuva}"></td>`:'<td class="pd-img-cell">—</td>';
+      return`<tr>
+        <td style="width:18pt;color:#999;font-size:7pt;text-align:center">${startIdx+i+1}</td>
+        ${imgCell}
+        <td><div class="pd-nro">${p.nro}${isE?' ⚡':''}</div><div class="pd-name">${pName(p)}</div></td>
+        <td class="right" style="white-space:nowrap">${fmt(p.hinta)} €</td>
+        <td class="right" style="white-space:nowrap">${qty} kpl</td>
+        <td class="right" style="white-space:nowrap;font-weight:800">${fmt(rowTot)} €</td>
+      </tr>`;
+    }).join('');
+  }
+  
+  const nkTotal=cartTotal(nk);
+  const ekTotal=cartTotal(ek);
+  const sub=nkTotal+ekTotal;
+  const vat=sub*VAT;
+  const tot=sub+vat;
+  
+  let sections='';
+  if(nk.length){
+    sections+=`<div class="pd-section">${tr.pdSecNk}</div>
+    <table class="pd-table">
+      <thead><tr>
+        <th style="width:16pt">${tr.pdTh[0]}</th><th style="width:40pt">${tr.pdTh[1]}</th><th>${tr.pdTh[2]}</th>
+        <th class="right" style="width:50pt">${tr.pdTh[3]}</th>
+        <th class="right" style="width:42pt">${tr.pdTh[4]}</th>
+        <th class="right" style="width:56pt">${tr.pdTh[5]}</th>
+      </tr></thead>
+      <tbody>${tableRows(nk,0)}</tbody>
+    </table>`;
+  }
+  if(ek.length){
+    sections+=`<div class="pd-section erikois">${tr.pdSecEk}</div>
+    <table class="pd-table erikois-table">
+      <thead><tr>
+        <th style="width:16pt">${tr.pdTh[0]}</th><th style="width:40pt">${tr.pdTh[1]}</th><th>${tr.pdTh[2]}</th>
+        <th class="right" style="width:50pt">${tr.pdTh[3]}</th>
+        <th class="right" style="width:42pt">${tr.pdTh[4]}</th>
+        <th class="right" style="width:56pt">${tr.pdTh[5]}</th>
+      </tr></thead>
+      <tbody>${tableRows(ek,nk.length)}</tbody>
+    </table>`;
+  }
+  
+  let totRows='';
+  if(nk.length&&ek.length){
+    totRows+=`<tr class="section-sub"><td>${tr.pdSubNk}</td><td style="text-align:right">${fmt(nkTotal)} €</td></tr>`;
+    totRows+=`<tr class="section-sub"><td>${tr.pdSubEk}</td><td style="text-align:right">${fmt(ekTotal)} €</td></tr>`;
+  }
+  totRows+=`<tr><td>${tr.pdSub}</td><td style="text-align:right">${fmt(sub)} €</td></tr>`;
+  totRows+=`<tr><td>${tr.pdVat}</td><td style="text-align:right">${fmt(vat)} €</td></tr>`;
+  totRows+=`<tr class="grand-line"><td>${tr.pdGrand}</td><td style="text-align:right">${fmt(tot)} €</td></tr>`;
+  
+  document.getElementById('printDoc').innerHTML=`
+    <div class="pd-header">
+      <div>
+        <div class="pd-logo">Nikkarien Oy</div>
+        <div class="pd-company-info">www.nikkarien.fi · info@nikkarien.fi<br>Y-tunnus: 0573131-2 · p. 09 4770150</div>
+      </div>
+      <div class="pd-meta">${tr.pdDateLbl} ${dateStr}<br>${tr.pdPriceLbl}${customerName?'<br><strong>Asiakas: '+customerName+'</strong>':''}</div>
+    </div>
+    <div class="pd-title">${tr.pdTitle}</div>
+    <div class="pd-subtitle">${customerName?'<strong>'+(LANG==='fi'?'Asiakas':'Customer')+': '+customerName+'</strong> · ':''} ${dateStr} · ${tr.pdItems(all.length,nk.length,ek.length)}</div>
+    ${customerName?`<div style="background:#faf9f7;border:1pt solid #e5e0da;border-left:3pt solid #7B3D1E;border-radius:3pt;padding:4pt 10pt;margin-bottom:5mm;font-size:9pt;"><span style="color:#8a7f78;font-size:7.5pt;text-transform:uppercase;letter-spacing:1px">${tr.pdCustomerLbl}</span><br><strong style="font-size:11pt">${customerName}</strong></div>`:''}
+    ${sections}
+    <div class="pd-totals-wrap"><table class="pd-totals"><tbody>${totRows}</tbody></table></div>
+    <div class="pd-footer">${tr.pdFooter}</div>
+  `;
+  setTimeout(()=>window.print(),100);
+}
+
+
+// ── LANGUAGE ──
+let LANG = 'fi';
+
+const T = {
+  fi: {
+    headerSub: 'Hinnasto 2026 · ALV 0%',
+    allChip: n => 'Kaikki ('+n+')',
+    groupChip: (g,n) => g+' ('+n+')',
+    stats: n => n+' tuotetta',
+    noResults: '🔍 Ei hakutuloksia',
+    addBtn: '+ Lisää',
+    inCartBtn: qty => '✓ '+qty+'x',
+    moqLbl: 'MOQ',
+    cartBarLabel: n => 'Ostoskori – '+n+' tuotetta',
+    cartBarSub: s => 'Yhteensä '+fmt(s)+' € (ALV 0%)',
+    cartEmpty: '🛒 Kori on tyhjä',
+    cartSecNk: 'Nikkarien Oy – Hinnasto 2026',
+    cartSecEk: '⚡ Erikoiserät',
+    totalSub: 'Välisumma (ALV 0%)',
+    totalVat: 'ALV 25,5%',
+    totalGrand: 'Yhteensä (ALV 25,5%)',
+    totalNk: 'Hinnasto yhteensä',
+    totalEk: 'Erikoiserät yhteensä',
+    printBtn: 'Tulosta PDF-muodossa',
+    cartTitle: 'Ostoehdotus / Tarjouspyyntö',
+    custLbl: '👤 Asiakas / Vastaanottaja',
+    custPh: 'Asiakkaan nimi tai yritys…',
+    searchPh: 'Hae nimellä tai tuotekoodilla…',
+    pdTitle: 'Ostoehdotus / Tarjouspyyntö',
+    pdDateLbl: 'Päivämäärä:',
+    pdPriceLbl: 'Hinnasto: 1.1.2026 ALV 0%',
+    pdCustomerLbl: 'Asiakas / Vastaanottaja',
+    pdSecNk: 'Hinnasto 2026',
+    pdSecEk: '⚡ Erikoiserät 2026',
+    pdTh: ['#','Kuva','Tuote','À-hinta','Määrä','Yht.'],
+    pdSubNk: 'Hinnasto 2026',
+    pdSubEk: '⚡ Erikoiserät',
+    pdSub: 'Välisumma (ALV 0%)',
+    pdVat: 'ALV 25,5%',
+    pdGrand: 'Yhteensä (ALV 25,5%)',
+    pdFooter: 'Nikkarien Oy · www.nikkarien.fi · Tämä on ostoehdotus / tarjouspyyntö, ei lasku · ' + AUTO_VERSION,
+    pdItems: (all,nk,ek) => `${all} tuotetta · ${nk} hinnastosta${ek?' · '+ek+' erikoiserästä':''}`,
+    modalPriceLbl: 'Hinta 2026 (ALV 0%)',
+    modalVatLbl: 'Hinta (ALV 25,5%)',
+    modalMoqLbl: 'Myyntierä (MOQ)',
+    modalSaldoLbl: 'Saldo',
+    modalNormLbl: 'Normaali hinta',
+    modalAddBtn: '＋ Lisää koriin',
+    modalRemoveBtn: '✕ Poista korista',
+    qtyLbl: 'Määrä (kpl)',
+    saldoLbl: kpl => 'Saldo: '+kpl+' kpl',
+    salePct: p => '-'+p+'%',
+    helpGuide: helpContentFI,
+  },
+  en: {
+    headerSub: 'Price List 2026 · VAT 0%',
+    allChip: n => 'All ('+n+')',
+    groupChip: (g,n) => g+' ('+n+')',
+    stats: n => n+' products',
+    noResults: '🔍 No results found',
+    addBtn: '+ Add',
+    inCartBtn: qty => '✓ '+qty+'x',
+    moqLbl: 'MOQ',
+    cartBarLabel: n => 'Cart – '+n+' items',
+    cartBarSub: s => 'Total '+fmt(s)+' € (VAT 0%)',
+    cartEmpty: '🛒 Cart is empty',
+    cartSecNk: 'Nikkarien Oy – Price List 2026',
+    cartSecEk: '⚡ Special Offers',
+    totalSub: 'Subtotal (VAT 0%)',
+    totalVat: 'VAT 25.5%',
+    totalGrand: 'Total (VAT 25.5%)',
+    totalNk: 'Price list total',
+    totalEk: 'Special offers total',
+    printBtn: 'Print as PDF',
+    cartTitle: 'Purchase Proposal / Quote Request',
+    custLbl: '👤 Customer / Recipient',
+    custPh: 'Customer name or company…',
+    searchPh: 'Search by name or product code…',
+    pdTitle: 'Purchase Proposal / Quote Request',
+    pdDateLbl: 'Date:',
+    pdPriceLbl: 'Price list: 1.1.2026 VAT 0%',
+    pdCustomerLbl: 'Customer / Recipient',
+    pdSecNk: 'Price List 2026',
+    pdSecEk: '⚡ Special Offers 2026',
+    pdTh: ['#','Image','Product','Unit price','Qty','Total'],
+    pdSubNk: 'Price List 2026',
+    pdSubEk: '⚡ Special Offers',
+    pdSub: 'Subtotal (VAT 0%)',
+    pdVat: 'VAT 25.5%',
+    pdGrand: 'Total (VAT 25.5%)',
+    pdFooter: 'Nikkarien Oy · www.nikkarien.fi · This is a purchase proposal / quote request, not an invoice · ' + AUTO_VERSION,
+    pdItems: (all,nk,ek) => `${all} products · ${nk} from price list${ek?' · '+ek+' special offers':''}`,
+    modalPriceLbl: 'Price 2026 (VAT 0%)',
+    modalVatLbl: 'Price (VAT 25.5%)',
+    modalMoqLbl: 'Sales unit (MOQ)',
+    modalSaldoLbl: 'Stock',
+    modalNormLbl: 'Normal price',
+    modalAddBtn: '＋ Add to cart',
+    modalRemoveBtn: '✕ Remove from cart',
+    qtyLbl: 'Quantity (pcs)',
+    saldoLbl: pcs => 'Stock: '+pcs+' pcs',
+    salePct: p => '-'+p+'%',
+    helpGuide: helpContentEN,
+  }
+};
+
+function t() { return T[LANG]; }
+function pName(p) { return LANG==='en' ? (p.nimi_en||p.nimi_fi||p.nimi) : (p.nimi_fi||p.nimi); }
+
+function setLang(lang) {
+  LANG = lang;
+  document.getElementById('btnFI').classList.toggle('active', lang==='fi');
+  document.getElementById('btnEN').classList.toggle('active', lang==='en');
+  document.getElementById('headerSub').textContent = t().headerSub;
+  document.getElementById('searchInput').placeholder = t().searchPh;
+  // Update lang bar label
+  const lbl = document.querySelector('.lang-bar-label');
+  if(lbl) lbl.textContent = lang==='fi' ? 'Kieli:' : 'Language:';
+  // Update help button text
+  const helpSpan = document.querySelector('.help-open-btn span');
+  if(helpSpan) helpSpan.textContent = lang==='fi' ? 'Ohjeet' : 'Help';
+  rebuildChips();
+  render();
+  updateCartBar();
+  // If cart is open, re-render it
+  if(document.getElementById('cartOverlay').classList.contains('open')) renderCart();
+  // If help is open, re-render it
+  if(document.getElementById('helpOverlay').classList.contains('open')) renderHelp();
+}
+
+function rebuildChips() {
+  const el = document.getElementById('chips');
+  el.innerHTML = '';
+  const allC = document.createElement('div');
+  allC.className = 'chip' + (activeGroup===null?' active':'');
+  allC.textContent = t().allChip(P.length);
+  allC.onclick = () => { activeGroup=null; document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); allC.classList.add('active'); render(); };
+  el.appendChild(allC);
+  
+  const groupNames = {
+    fi: {Kauha:'Kauha',Kiulu:'Kiulu',Setti:'Setti',Mittari:'Mittari',Tuoksu:'Tuoksu',
+         Tekstiili:'Tekstiili',Harja:'Harja',Takka:'Takka',Muu:'Muu','Erikoiserä':'Erikoiserä'},
+    en: {Kauha:'Ladle',Kiulu:'Bowl',Setti:'Set',Mittari:'Meter',Tuoksu:'Scent',
+         Tekstiili:'Textile',Harja:'Brush',Takka:'Fireplace',Muu:'Other','Erikoiserä':'Special Offers'}
+  };
+  const gn = groupNames[LANG];
+  
+  allGroups.forEach(g => {
+    const n = P.filter(p=>p.ryhma===g).length;
+    if(!n) return;
+    const c = document.createElement('div');
+    const label = gn[g]||g;
+    c.className = 'chip' + (activeGroup===g?' active':'') + (g==='Erikoiserä'?' erikois-chip':'');
+    c.textContent = label+' ('+n+')';
+    c.onclick = () => { activeGroup=g; document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); render(); };
+    el.appendChild(c);
+  });
+}
+
+// ── HELP ──
+function openHelp() {
+  renderHelp();
+  document.getElementById('helpOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeHelp() {
+  document.getElementById('helpOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function closeHelpOutside(e) { if(e.target===document.getElementById('helpOverlay')) closeHelp(); }
+function renderHelp() {
+  document.getElementById('helpBody').innerHTML = (LANG==='fi' ? helpContentFI() : helpContentEN());
+}
+
+function helpContentFI() {
+  const tag = c => `<span class="card-tag" style="background:${c[0]};color:${c[1]};padding:2px 8px;border-radius:3px;font-size:11px;font-weight:700">${c[2]}</span>`;
+  return `
+  <div class="help-hero">
+    <div class="help-hero-icon">📋</div>
+    <div class="help-hero-title">Nikkarien Oy – Hinnasto 2026</div>
+    <div class="help-hero-sub">192 tuotetta · Offline-toimiva · iOS & Android</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Asennus</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Lataa tiedosto</div><div class="help-step-desc">Tallenna <strong>Hinnasto_2026.html</strong> laitteellesi. Tiedosto on n. 47 MB — lataus kestää hetken.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Avaa selaimessa</div><div class="help-step-desc">Kaksoisnapauta tiedostoa — avautuu Chrome tai Safari. Suositellaan <strong>Chrome</strong> tai <strong>Edge</strong>.</div></div></div>
+    <div class="help-tip"><strong>💡 OneDrive-vinkki</strong>Tallenna OneDriveen → pääset kaikilla laitteilla. Uusi versio → korvaa tiedosto.</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Selaus ja haku</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Ryhmäsuodatus</div><div class="help-step-desc">Napauta chippiä (Kauha, Kiulu, Setti…) suodattaaksesi ryhmän. <strong>Erikoiserä</strong>-chippi erottuu oranssilla.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Haku</div><div class="help-step-desc">Kirjoita tuotenumero tai osa nimestä — tulokset päivittyvät heti. Tyhjennä ✕-painikkeella.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Tuotetiedot</div><div class="help-step-desc">Napauta korttia → avautuu tietoikkuna: hinta ALV 0% ja 25,5%, MOQ, saldo (erikoiserät).</div></div></div>
+    <div class="help-tip"><strong>🔍 Hakuvinkkejä</strong>Hae: <em>853M</em> (tuotenro) · <em>kupari</em> · <em>4 ltr</em></div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Ostoskori</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Lisää koriin</div><div class="help-step-desc">Napauta <strong>+ Lisää</strong> kortissa → lisää yhden MOQ:n. Tai avaa tuoteikkuna → säädä määrää → Lisää koriin.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Avaa kori</div><div class="help-step-desc">Napauta alareunassa olevaa oranssia <strong>🛒 Ostoskori</strong> -palkkia.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Muokkaa</div><div class="help-step-desc">Säädä määriä <strong>−/+</strong> -napeilla (MOQ-askelin). Poista tuote 🗑-painikkeella.</div></div></div>
+    <div class="help-tip"><strong>ℹ️ Huom!</strong>Kori tyhjenee kun suljet selaimen. Tulosta ennen sulkemista.</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">PDF-tulostus</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Lisää asiakkaan nimi</div><div class="help-step-desc">Kirjoita asiakkaan nimi tai yritys korin yläosassa olevaan kenttään 👤.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Tulosta</div><div class="help-step-desc">Paina <strong>Tulosta PDF-muodossa</strong> → selain avaa tulostusikkunan → valitse <em>Tallenna PDF</em>.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Lähetä tarjouspyyntö</div><div class="help-step-desc">Lähetä muodostunut PDF-tiedosto sähköpostilla osoitteeseen <strong>info@nikkarien.fi</strong>. Saat vastauksena tarjouksen.</div></div></div>
+    <div class="help-tip"><strong>📱 iOS-ohje</strong>Safarin tulostusikkunassa: napauta <em>Jaa → Tallenna PDF</em> → tiedosto Omiin tiedostoihin.</div>
+  </div>
+  <div class="help-footer">Nikkarien Oy · www.nikkarien.fi · Sovellus tehty Claude AI:lla</div>
+  `;
+}
+
+function helpContentEN() {
+  return `
+  <div class="help-hero">
+    <div class="help-hero-icon">📋</div>
+    <div class="help-hero-title">Nikkarien Oy – Price List 2026</div>
+    <div class="help-hero-sub">192 products · Works offline · iOS & Android</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Installation</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Download the file</div><div class="help-step-desc">Save <strong>Hinnasto_2026.html</strong> to your device. The file is ~47 MB — downloading takes a moment.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Open in browser</div><div class="help-step-desc">Double-tap the file — it opens in Chrome or Safari. Recommended: <strong>Chrome</strong> or <strong>Edge</strong>.</div></div></div>
+    <div class="help-tip"><strong>💡 OneDrive tip</strong>Save to OneDrive → access from all devices. New version → just replace the file.</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Browsing and search</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Group filter</div><div class="help-step-desc">Tap a chip (Ladle, Bowl, Set…) to filter by group. <strong>Special Offers</strong> chip is highlighted in orange.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Search</div><div class="help-step-desc">Type a product number or part of the name — results update instantly. Clear with ✕ button.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Product details</div><div class="help-step-desc">Tap any card → detail sheet opens: price VAT 0% and 25.5%, MOQ, stock (special offers).</div></div></div>
+    <div class="help-tip"><strong>🔍 Search tips</strong>Search by: <em>853M</em> (item no.) · <em>copper</em> · <em>4 ltr</em></div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Shopping cart</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Add to cart</div><div class="help-step-desc">Tap <strong>+ Add</strong> on a card → adds one MOQ. Or open product sheet → adjust quantity → Add to cart.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Open cart</div><div class="help-step-desc">Tap the orange <strong>🛒 Cart</strong> bar at the bottom of the screen.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Edit</div><div class="help-step-desc">Adjust quantities with <strong>−/+</strong> buttons (in MOQ steps). Remove items with 🗑.</div></div></div>
+    <div class="help-tip"><strong>ℹ️ Note!</strong>Cart clears when you close the browser. Print before closing.</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">PDF printing</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Add customer name</div><div class="help-step-desc">Enter the customer name or company in the 👤 field at the top of the cart.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Print</div><div class="help-step-desc">Press <strong>Print as PDF</strong> → browser opens print dialog → select <em>Save as PDF</em>.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Send quote request</div><div class="help-step-desc">Send the created PDF file by email to <strong>info@nikkarien.fi</strong>. You will receive a quote in response.</div></div></div>
+    <div class="help-tip"><strong>📱 iOS guide</strong>In Safari print dialog: tap <em>Share → Save to Files</em>.</div>
+  </div>
+  <div class="help-footer">Nikkarien Oy · www.nikkarien.fi · App built with Claude AI</div>
+  `;
+}
+
+
+// override render to use pName()
+render();
+rebuildChips();
+</script>
+
+<!-- HELP MODAL -->
+<div class="help-overlay" id="helpOverlay" onclick="closeHelpOutside(event)">
+  <div class="help-modal" onclick="event.stopPropagation()">
+    <div class="help-header">
+      <div class="help-title" id="helpTitle">Ohje</div>
+      <button class="help-close" onclick="closeHelp()">×</button>
+    </div>
+    <div class="help-body" id="helpBody">
+      <p style="padding:18px;">Apuohje sisältö täydennetään myöhemmin.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Dynaaminen versionumero ja päivämäärä otsikkoon -->
+<script>
+(function(){
+  var el = document.getElementById('versionSpan');
+  if(el) el.textContent = AUTO_VERSION;
+  var del = document.getElementById('dateSpan');
+  if(del) del.textContent = AUTO_DATE;
+  document.title = 'Hinnasto 2026 – Nikkarien Oy ' + AUTO_VERSION;
+})();
+</script>
+
+<!-- ===== PWA: Service Worker -rekisteröinti ===== -->
+<script>
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+  var proto = location.protocol;
+  if (proto !== 'http:' && proto !== 'https:') return;
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('service-worker.js')
+      .then(function(reg){ if (reg && reg.update) reg.update(); })
+      .catch(function(err){ console.warn('SW-rekisteröinti epäonnistui:', err); });
+  });
+})();
+</script>
+
+</body>
+</html>
