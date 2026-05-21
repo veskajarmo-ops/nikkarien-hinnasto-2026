@@ -291,7 +291,7 @@ header{background:var(--surface);border-bottom:2px solid var(--accent);padding:1
 <div class="lang-bar" id="langBar">
   <div style="display:flex;gap:6px;flex-wrap:wrap;">
     <button class="help-open-btn" onclick="openHelp()">❓ <span data-fi="Ohjeet" data-en="Help">Ohjeet</span></button>
-    <a class="help-open-btn" href="https://nikkarien-my.sharepoint.com/personal/arttu_korpela_nikkarien_onmicrosoft_com/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Farttu%5Fkorpela%5Fnikkarien%5Fonmicrosoft%5Fcom%2FDocuments%2FU%20asema%2FESITTEET%20JA%20KUVASTOT%2FKuvasto%20XV%202026%2FNikkarien%5Fcatalogue%5F2026%5FXV%2Epdf&parent=%2Fpersonal%2Farttu%5Fkorpela%5Fnikkarien%5Fonmicrosoft%5Fcom%2FDocuments%2FU%20asema%2FESITTEET%20JA%20KUVASTOT%2FKuvasto%20XV%202026" target="_blank" rel="noopener" style="text-decoration:none;">📖 <span data-fi="Tuotekuvasto" data-en="Catalogue">Tuotekuvasto</span></a>
+    <button class="help-open-btn" onclick="window.open('Nikkarien_catalogue_2026_XV.pdf','_blank','noopener')">📖 <span data-fi="Tuotekuvasto" data-en="Catalogue">Tuotekuvasto</span></button>
   </div>
   <div class="lang-bar-right">
     <span class="lang-bar-label" data-fi="Kieli:" data-en="Language:">Kieli:</span>
@@ -895,10 +895,17 @@ function helpContentFI() {
     <div class="help-hero-sub">192 tuotetta · Offline-toimiva · iOS & Android</div>
   </div>
   <div class="help-section">
-    <div class="help-sec-title">Asennus</div>
-    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Lataa tiedosto</div><div class="help-step-desc">Tallenna <strong>Hinnasto_2026.html</strong> laitteellesi. Tiedosto on n. 47 MB — lataus kestää hetken.</div></div></div>
-    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Avaa selaimessa</div><div class="help-step-desc">Kaksoisnapauta tiedostoa — avautuu Chrome tai Safari. Suositellaan <strong>Chrome</strong> tai <strong>Edge</strong>.</div></div></div>
-    <div class="help-tip"><strong>💡 OneDrive-vinkki</strong>Tallenna OneDriveen → pääset kaikilla laitteilla. Uusi versio → korvaa tiedosto.</div>
+    <div class="help-sec-title">Asennus puhelimeen</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Avaa linkki</div><div class="help-step-desc">Avaa puhelimen selaimella osoite <strong>veskajarmo-ops.github.io/nikkarien-hinnasto-2026</strong>. Android: Chrome tai Edge. iPhone: Safari.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Asenna sovellus</div><div class="help-step-desc">Android: kolme pistettä → <strong>Asenna sovellus</strong>. iPhone (Safari): jakopainike → <strong>Lisää Koti-näyttöön</strong>.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Käytä aloitusnäytöltä</div><div class="help-step-desc">Sovellus näkyy SAUNIA-kuvakkeena aloitusnäytöllä. Toimii myös ilman nettiyhteyttä ensimmäisen latauksen jälkeen.</div></div></div>
+    <div class="help-tip"><strong>💡 Päivitykset</strong>Hinnasto päivittyy itsestään taustalla — sinun ei tarvitse tehdä mitään.</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Tuotekuvasto</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Avaa kuvasto</div><div class="help-step-desc">Paina sovelluksen ylhäällä olevaa <strong>📖 Tuotekuvasto</strong> -nappia → kuvasto aukeaa uuteen välilehteen PDF-muodossa.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Selaa tai tallenna</div><div class="help-step-desc">Selaa kuvaston suoraan selaimessa, tai tallenna PDF laitteellesi (jakopainike → Tallenna tiedostoihin) myöhempää offline-katselua varten.</div></div></div>
+    <div class="help-tip"><strong>ℹ️ Aina uusin versio</strong>Kuvaston linkki osoittaa aina viimeisimpään versioon — kun se päivittyy, sama nappi näyttää uuden version automaattisesti.</div>
   </div>
   <div class="help-section">
     <div class="help-sec-title">Selaus ja haku</div>
@@ -933,10 +940,17 @@ function helpContentEN() {
     <div class="help-hero-sub">192 products · Works offline · iOS & Android</div>
   </div>
   <div class="help-section">
-    <div class="help-sec-title">Installation</div>
-    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Download the file</div><div class="help-step-desc">Save <strong>Hinnasto_2026.html</strong> to your device. The file is ~47 MB — downloading takes a moment.</div></div></div>
-    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Open in browser</div><div class="help-step-desc">Double-tap the file — it opens in Chrome or Safari. Recommended: <strong>Chrome</strong> or <strong>Edge</strong>.</div></div></div>
-    <div class="help-tip"><strong>💡 OneDrive tip</strong>Save to OneDrive → access from all devices. New version → just replace the file.</div>
+    <div class="help-sec-title">Install on your phone</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Open the link</div><div class="help-step-desc">Open <strong>veskajarmo-ops.github.io/nikkarien-hinnasto-2026</strong> in your phone's browser. Android: Chrome or Edge. iPhone: Safari.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Install the app</div><div class="help-step-desc">Android: three dots → <strong>Install app</strong>. iPhone (Safari): share button → <strong>Add to Home Screen</strong>.</div></div></div>
+    <div class="help-step"><div class="help-step-num">3</div><div><div class="help-step-title">Use from home screen</div><div class="help-step-desc">App appears as SAUNIA icon on your home screen. Works offline too once first loaded.</div></div></div>
+    <div class="help-tip"><strong>💡 Updates</strong>The price list updates itself in the background — no action needed from you.</div>
+  </div>
+  <div class="help-section">
+    <div class="help-sec-title">Product catalogue</div>
+    <div class="help-step"><div class="help-step-num">1</div><div><div class="help-step-title">Open catalogue</div><div class="help-step-desc">Tap the <strong>📖 Catalogue</strong> button at the top → catalogue opens in a new tab as PDF.</div></div></div>
+    <div class="help-step"><div class="help-step-num">2</div><div><div class="help-step-title">Browse or save</div><div class="help-step-desc">Browse directly in the browser, or save the PDF to your device (share → Save to Files) for later offline viewing.</div></div></div>
+    <div class="help-tip"><strong>ℹ️ Always latest</strong>The catalogue link always points to the latest version — when we update it, the same button shows the new version automatically.</div>
   </div>
   <div class="help-section">
     <div class="help-sec-title">Browsing and search</div>
