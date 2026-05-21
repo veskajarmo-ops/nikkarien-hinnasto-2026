@@ -289,7 +289,10 @@ header{background:var(--surface);border-bottom:2px solid var(--accent);padding:1
 
 <!-- HEADER -->
 <div class="lang-bar" id="langBar">
-  <button class="help-open-btn" onclick="openHelp()">❓ <span data-fi="Ohjeet" data-en="Help">Ohjeet</span></button>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button class="help-open-btn" onclick="openHelp()">❓ <span data-fi="Ohjeet" data-en="Help">Ohjeet</span></button>
+    <a class="help-open-btn" href="https://nikkarien-my.sharepoint.com/personal/arttu_korpela_nikkarien_onmicrosoft_com/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Farttu%5Fkorpela%5Fnikkarien%5Fonmicrosoft%5Fcom%2FDocuments%2FU%20asema%2FESITTEET%20JA%20KUVASTOT%2FKuvasto%20XV%202026%2FNikkarien%5Fcatalogue%5F2026%5FXV%2Epdf&parent=%2Fpersonal%2Farttu%5Fkorpela%5Fnikkarien%5Fonmicrosoft%5Fcom%2FDocuments%2FU%20asema%2FESITTEET%20JA%20KUVASTOT%2FKuvasto%20XV%202026" target="_blank" rel="noopener" style="text-decoration:none;">📖 <span data-fi="Tuotekuvasto" data-en="Catalogue">Tuotekuvasto</span></a>
+  </div>
   <div class="lang-bar-right">
     <span class="lang-bar-label" data-fi="Kieli:" data-en="Language:">Kieli:</span>
     <button class="lang-btn active" id="btnFI" onclick="setLang('fi')">🇫🇮 Suomi</button>

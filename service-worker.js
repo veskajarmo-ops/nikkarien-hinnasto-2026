@@ -4,7 +4,7 @@
 // CACHE_VERSION (esim. v1 → v2). Se on se, mikä saa kollegoiden
 // puhelimet lataamaan uuden hinnastoversion automaattisesti.
 
-const CACHE_VERSION = 'nikkarien-hinnasto-v2';
+const CACHE_VERSION = 'nikkarien-hinnasto-v3';
 
 const APP_SHELL = [
   './',
