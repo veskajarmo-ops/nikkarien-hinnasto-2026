@@ -429,6 +429,7 @@ function filtered(){
 function cartCount(){return Object.values(cart).filter(v=>v>0).length;}
 function cartItems(){return P.filter(p=>cart[p.cart_key]>0);}
 function cartTotal(items){return (items||cartItems()).reduce((a,p)=>a+p.hinta*(cart[p.cart_key]||0),0);}
+function cartTotalSuositus(items){return (items||cartItems()).reduce((a,p)=>a+(SUOSITUSHINNAT[p.nro]!=null?SUOSITUSHINNAT[p.nro]:p.hinta*(1+VAT))*(cart[p.cart_key]||0),0);}
 
 // ── Render grid ──
 function render(){
@@ -477,7 +478,8 @@ function quickAdd(e,ck,nro){
   e.stopPropagation();
   const p=P.find(x=>x.cart_key===ck);
   if(!p)return;
-  cart[ck]=(cart[ck]||0)+p.moq;
+  const step=suositusMode?1:p.moq;
+  cart[ck]=(cart[ck]||0)+step;
   updateCartBar();render();
 }
 
@@ -488,7 +490,7 @@ function updateCartBar(){
   if(!n){bar.classList.add('hidden');return;}
   bar.classList.remove('hidden');
   document.getElementById('cartBarLabel').textContent=t().cartBarLabel(n);
-  document.getElementById('cartBarSub').textContent=t().cartBarSub(cartTotal());
+  document.getElementById('cartBarSub').textContent=suositusMode?t().cartBarSubSuositus(cartTotalSuositus()):t().cartBarSub(cartTotal());
 }
 
 // ── Product modal ──
@@ -509,21 +511,23 @@ function openModal(gi){
     <div class="modal-nro">Tuotenro ${p.nro}${isE?' · ⚡ '+(LANG==='fi'?'Erikoiserä':'Special Offer'):''}</div>
     <div class="modal-name">${pn}</div>
     <span class="card-tag ${tc}" style="margin-bottom:12px;display:inline-block">${p.ryhma}</span>
+    ${suositusMode?`
+    <div class="drow"><span class="dlbl">${tr.modalVatLbl}</span><span class="dval ${accentClass}">${fmt(SUOSITUSHINNAT[p.nro]!=null?SUOSITUSHINNAT[p.nro]:p.hinta*(1+VAT))} €</span></div>`:`
     ${isE&&p.hinta_norm?`<div class="drow"><span class="dlbl">${tr.modalNormLbl}</span><span class="dval" style="text-decoration:line-through;color:var(--muted)">${fmt(p.hinta_norm)} €</span></div>`:''}
     <div class="drow"><span class="dlbl">${tr.modalPriceLbl}</span><span class="dval ${accentClass}">${fmt(p.hinta)} €${savPct?` <span class="savings-pct">-${savPct}%</span>`:''}</span></div>
     <div class="drow"><span class="dlbl">${tr.modalVatLbl}</span><span class="dval">${fmt(p.hinta*(1+VAT))} €</span></div>
     <div class="drow"><span class="dlbl">${tr.modalMoqLbl}</span><span class="dval" style="color:#16a34a">${p.moq} kpl</span></div>
-    ${isE&&p.saldo!=null?`<div class="drow"><span class="dlbl">${tr.modalSaldoLbl}</span><span class="dval" style="color:#16a34a">${p.saldo} kpl</span></div>`:''}
+    ${isE&&p.saldo!=null?`<div class="drow"><span class="dlbl">${tr.modalSaldoLbl}</span><span class="dval" style="color:#16a34a">${p.saldo} kpl</span></div>`:''}`}
     <div class="modal-add-section">
       <div class="qty-row">
         <span class="qty-label">${tr.qtyLbl}</span>
         <div class="qty-ctrl">
-          <button class="qty-btn" onclick="modalAdj(-1,'${p.cart_key}',${p.moq})">−</button>
-          <input class="qty-val" id="modalQty" type="number" value="${inCart?cart[p.cart_key]:p.moq}" min="${p.moq}" step="${p.moq}">
-          <button class="qty-btn" onclick="modalAdj(1,'${p.cart_key}',${p.moq})">+</button>
+          <button class="qty-btn" onclick="modalAdj(-1,'${p.cart_key}',${suositusMode?1:p.moq})">−</button>
+          <input class="qty-val" id="modalQty" type="number" value="${inCart?cart[p.cart_key]:(suositusMode?1:p.moq)}" min="${suositusMode?1:p.moq}" step="${suositusMode?1:p.moq}">
+          <button class="qty-btn" onclick="modalAdj(1,'${p.cart_key}',${suositusMode?1:p.moq})">+</button>
         </div>
       </div>
-      <button class="modal-add-btn${isE?' erikois':''}${inCart?' remove':''}" onclick="modalToggle('${p.cart_key}',${p.moq})">
+      <button class="modal-add-btn${isE?' erikois':''}${inCart?' remove':''}" onclick="modalToggle('${p.cart_key}',${suositusMode?1:p.moq})">
         ${inCart?tr.modalRemoveBtn:tr.modalAddBtn}
       </button>
     </div>
@@ -570,23 +574,26 @@ function renderCart(){
   
   function itemHtml(p){
     const qty=cart[p.cart_key];
-    const rowTot=p.hinta*qty;
+    const step=suositusMode?1:p.moq;
+    const unitPrice=suositusMode&&SUOSITUSHINNAT[p.nro]!=null?SUOSITUSHINNAT[p.nro]:p.hinta;
+    const rowTot=unitPrice*qty;
     const isE=p.source==='erikois';
     const img=p.kuva?`<img class="cart-item-img${isE?' cart-item-erikois':''}" src="${p.kuva}" alt="">`:'<div class="cart-item-no-img">📦</div>';
+    const metaLine=suositusMode?`${fmt(unitPrice)} €/kpl (sis. alv)`:`MOQ ${p.moq} kpl · ${fmt(p.hinta)} €/kpl`;
     return`<div class="cart-item">
       ${img}
       <div class="cart-item-info">
         <div class="cart-item-nro${isE?' erikois':''}">${p.nro}${isE?' ⚡':''}</div>
         <div class="cart-item-name">${pName(p)}</div>
-        <div class="cart-item-meta">MOQ ${p.moq} kpl · ${fmt(p.hinta)} €/kpl</div>
+        <div class="cart-item-meta">${metaLine}</div>
       </div>
       <div class="cart-item-right">
         <div class="cart-item-price">${fmt(rowTot)} €</div>
         <div class="cart-item-ctrl">
-          <button class="cart-item-btn" onclick="cartAdj('${p.cart_key}',${p.moq},-1)">−</button>
-          <input class="cart-item-qty" type="number" value="${qty}" min="${p.moq}" step="${p.moq}"
-            onchange="cartSetQty('${p.cart_key}',${p.moq},this.value)">
-          <button class="cart-item-btn" onclick="cartAdj('${p.cart_key}',${p.moq},1)">+</button>
+          <button class="cart-item-btn" onclick="cartAdj('${p.cart_key}',${step},-1)">−</button>
+          <input class="cart-item-qty" type="number" value="${qty}" min="${step}" step="${step}"
+            onchange="cartSetQty('${p.cart_key}',${step},this.value)">
+          <button class="cart-item-btn" onclick="cartAdj('${p.cart_key}',${step},1)">+</button>
         </div>
         <button class="cart-item-del" onclick="cartRemove('${p.cart_key}')">🗑</button>
       </div>
@@ -605,13 +612,18 @@ function renderCart(){
   const tot=sub+vat;
   
   let totHtml='';
-  if(nk.length&&ek.length){
-    totHtml+=`<div class="total-row section"><span>${t().totalNk}</span><span>${fmt(nkTotal)} €</span></div>`;
-    totHtml+=`<div class="total-row section"><span>${t().totalEk}</span><span>${fmt(ekTotal)} €</span></div>`;
+  if(suositusMode){
+    const stot=cartTotalSuositus();
+    totHtml+=`<div class="total-row big"><span>${t().totalGrand}</span><span>${fmt(stot)} €</span></div>`;
+  } else {
+    if(nk.length&&ek.length){
+      totHtml+=`<div class="total-row section"><span>${t().totalNk}</span><span>${fmt(nkTotal)} €</span></div>`;
+      totHtml+=`<div class="total-row section"><span>${t().totalEk}</span><span>${fmt(ekTotal)} €</span></div>`;
+    }
+    totHtml+=`<div class="total-row"><span>${t().totalSub}</span><span>${fmt(sub)} €</span></div>`;
+    totHtml+=`<div class="total-row"><span>${t().totalVat}</span><span>${fmt(vat)} €</span></div>`;
+    totHtml+=`<div class="total-row big"><span>${t().totalGrand}</span><span>${fmt(tot)} €</span></div>`;
   }
-  totHtml+=`<div class="total-row"><span>${t().totalSub}</span><span>${fmt(sub)} €</span></div>`;
-  totHtml+=`<div class="total-row"><span>${t().totalVat}</span><span>${fmt(vat)} €</span></div>`;
-  totHtml+=`<div class="total-row big"><span>${t().totalGrand}</span><span>${fmt(tot)} €</span></div>`;
   document.getElementById('cartTotals').innerHTML=totHtml;
 }
 function cartAdj(ck,moq,dir){cart[ck]=Math.max(moq,(cart[ck]||moq)+dir*moq);updateCartBar();renderCart();render();}
@@ -679,6 +691,7 @@ function printOrder(){
   const sub=nkTotal+ekTotal;
   const vat=sub*VAT;
   const tot=sub+vat;
+  const stot=cartTotalSuositus();
   
   let sections='';
   if(nk.length){
@@ -707,13 +720,17 @@ function printOrder(){
   }
   
   let totRows='';
-  if(nk.length&&ek.length){
-    totRows+=`<tr class="section-sub"><td>${tr.pdSubNk}</td><td style="text-align:right">${fmt(nkTotal)} €</td></tr>`;
-    totRows+=`<tr class="section-sub"><td>${tr.pdSubEk}</td><td style="text-align:right">${fmt(ekTotal)} €</td></tr>`;
+  if(suositusMode){
+    totRows+=`<tr class="grand-line"><td>${tr.pdGrand}</td><td style="text-align:right">${fmt(stot)} €</td></tr>`;
+  } else {
+    if(nk.length&&ek.length){
+      totRows+=`<tr class="section-sub"><td>${tr.pdSubNk}</td><td style="text-align:right">${fmt(nkTotal)} €</td></tr>`;
+      totRows+=`<tr class="section-sub"><td>${tr.pdSubEk}</td><td style="text-align:right">${fmt(ekTotal)} €</td></tr>`;
+    }
+    totRows+=`<tr><td>${tr.pdSub}</td><td style="text-align:right">${fmt(sub)} €</td></tr>`;
+    totRows+=`<tr><td>${tr.pdVat}</td><td style="text-align:right">${fmt(vat)} €</td></tr>`;
+    totRows+=`<tr class="grand-line"><td>${tr.pdGrand}</td><td style="text-align:right">${fmt(tot)} €</td></tr>`;
   }
-  totRows+=`<tr><td>${tr.pdSub}</td><td style="text-align:right">${fmt(sub)} €</td></tr>`;
-  totRows+=`<tr><td>${tr.pdVat}</td><td style="text-align:right">${fmt(vat)} €</td></tr>`;
-  totRows+=`<tr class="grand-line"><td>${tr.pdGrand}</td><td style="text-align:right">${fmt(tot)} €</td></tr>`;
   
   document.getElementById('printDoc').innerHTML=`
     <div class="pd-header">
@@ -749,6 +766,7 @@ const T = {
     moqLbl: 'MOQ',
     cartBarLabel: n => 'Ostoskori – '+n+' tuotetta',
     cartBarSub: s => 'Yhteensä '+fmt(s)+' € (ALV 0%)',
+    cartBarSubSuositus: s => 'Yhteensä '+fmt(s)+' € (sis. ALV)',
     cartEmpty: '🛒 Kori on tyhjä',
     cartSecNk: 'Nikkarien Oy – Hinnasto 2026',
     cartSecEk: '⚡ Erikoiserät',
@@ -799,6 +817,7 @@ const T = {
     moqLbl: 'MOQ',
     cartBarLabel: n => 'Cart – '+n+' items',
     cartBarSub: s => 'Total '+fmt(s)+' € (VAT 0%)',
+    cartBarSubSuositus: s => 'Total '+fmt(s)+' € (incl. VAT)',
     cartEmpty: '🛒 Cart is empty',
     cartSecNk: 'Nikkarien Oy – Price List 2026',
     cartSecEk: '⚡ Special Offers',
