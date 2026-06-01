@@ -868,12 +868,10 @@ function setLang(lang) {
   document.getElementById('btnEN').classList.toggle('active', lang==='en');
   document.getElementById('headerSub').textContent = t().headerSub;
   document.getElementById('searchInput').placeholder = t().searchPh;
-  // Update lang bar label
-  const lbl = document.querySelector('.lang-bar-label');
-  if(lbl) lbl.textContent = lang==='fi' ? 'Kieli:' : 'Language:';
-  // Update help button text
-  const helpSpan = document.querySelector('.help-open-btn span');
-  if(helpSpan) helpSpan.textContent = lang==='fi' ? 'Ohjeet' : 'Help';
+  // Update all elements with data-fi / data-en attributes
+  document.querySelectorAll('[data-fi][data-en]').forEach(el => {
+    el.textContent = lang==='fi' ? el.getAttribute('data-fi') : el.getAttribute('data-en');
+  });
   rebuildChips();
   render();
   updateCartBar();
