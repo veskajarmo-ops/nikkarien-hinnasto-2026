@@ -6,12 +6,9 @@ echo   Nikkarien Hinnasto — Lähetä GitHubiin
 echo ============================================
 echo.
 
-:: Varmista että ollaan main-haaralla
-git symbolic-ref --short HEAD >nul 2>&1
-if errorlevel 1 (
-    echo Siirrytaan main-haaralle...
-    git checkout main 2>nul || git checkout -b main
-)
+git checkout main
+echo Haetaan viimeisimmat muutokset GitHubista...
+git pull origin main
 
 git add .
 
