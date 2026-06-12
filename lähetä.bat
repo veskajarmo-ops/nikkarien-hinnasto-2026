@@ -14,6 +14,10 @@ if "%VIESTI%"=="" set VIESTI=Paivitys %date% %time:~0,5%
 git commit -m "%VIESTI%"
 
 echo.
+echo Haetaan muutokset GitHubista...
+git pull origin main --no-rebase
+
+echo.
 echo Lahetetaan GitHubiin...
 git push origin main
 
