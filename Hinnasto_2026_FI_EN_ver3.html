@@ -298,8 +298,13 @@ header{background:var(--surface);border-bottom:2px solid var(--accent);padding:1
 <!-- HEADER -->
 <div class="lang-bar" id="langBar">
   <div style="display:flex;gap:6px;flex-wrap:wrap;">
+<<<<<<< HEAD
     <button class="help-open-btn" onclick="openHelp()">❓ <span data-fi="Ohjeet" data-en="Help">Ohjeet</span></button>
     <button class="help-open-btn" onclick="window.open('Nikkarien_catalogue_2026_XV.pdf','_blank','noopener')">📖 <span data-fi="Tuotekuvasto" data-en="Product catalogue">Tuotekuvasto</span></button>
+=======
+    <button class="suositus-btn" onclick="openHelp()">❓ <span data-fi="Ohjeet" data-en="Help">Ohjeet</span></button>
+    <button class="suositus-btn" onclick="window.open('Nikkarien_catalogue_2026_XV.pdf','_blank','noopener')">📖 <span data-fi="Tuotekuvasto" data-en="Product catalogue">Tuotekuvasto</span></button>
+>>>>>>> 56f4b69e6583fbf52c94fb966b7459a032d8a34f
     <button class="suositus-btn" id="suositusBtn" onclick="toggleSuositus()">🏷️ <span data-fi="Suositushinnasto" data-en="Recommended retail prices">Suositushinnasto</span></button>
   </div>
   <div class="lang-bar-right">
@@ -868,12 +873,10 @@ function setLang(lang) {
   document.getElementById('btnEN').classList.toggle('active', lang==='en');
   document.getElementById('headerSub').textContent = t().headerSub;
   document.getElementById('searchInput').placeholder = t().searchPh;
-  // Update lang bar label
-  const lbl = document.querySelector('.lang-bar-label');
-  if(lbl) lbl.textContent = lang==='fi' ? 'Kieli:' : 'Language:';
-  // Update help button text
-  const helpSpan = document.querySelector('.help-open-btn span');
-  if(helpSpan) helpSpan.textContent = lang==='fi' ? 'Ohjeet' : 'Help';
+  // Update all elements with data-fi / data-en attributes
+  document.querySelectorAll('[data-fi][data-en]').forEach(el => {
+    el.textContent = lang==='fi' ? el.getAttribute('data-fi') : el.getAttribute('data-en');
+  });
   rebuildChips();
   render();
   updateCartBar();
