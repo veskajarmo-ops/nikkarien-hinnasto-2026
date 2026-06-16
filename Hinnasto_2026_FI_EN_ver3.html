@@ -450,7 +450,7 @@ function render(){
     const normLine=isE&&p.hinta_norm?`<div class="price-norm">${fmt(p.hinta_norm)} €</div>`:'';
     const savPct=isE&&p.hinta_norm?Math.round((1-p.hinta/p.hinta_norm)*100):0;
     const savBadge=savPct>0?`<span class="savings-pct">${t().salePct(savPct)}</span>`:'';
-    const saldoLine=isE&&p.saldo!=null?`<div class="saldo-badge">${t().saldoLbl(p.saldo)}</div>`:'';
+    const saldoLine=(isE||p.ryhma==='Erikoiserä')&&p.saldo!=null?`<div class="saldo-badge">${t().saldoLbl(p.saldo)}</div>`:'';
     return`<div class="card${inCart?' in-cart':''}${isE?' erikois-card':''}" onclick="openModal(${gi})">
       ${ribbon}${badge}${img}
       <div class="card-body">
@@ -1056,7 +1056,7 @@ rebuildChips();
     // Update P array (only erikoiserä products that exist in map)
     let updated = 0;
     P.forEach(p => {
-      if (p.ryhma === 'Erikoiserä' && map[p.nro] !== undefined) {
+      if ((p.ryhma === 'Erikoiserä' || p.source === 'erikois') && map[p.nro] !== undefined) {
         p.saldo = map[p.nro];
         updated++;
       }
